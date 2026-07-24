@@ -1,0 +1,32 @@
+:root {
+  --navy: #1b2138;
+  --navy-2: #262d4a;
+  --bg: #f4f6fb;
+  --card: #ffffff;
+
+  --primary: #4e5ae8;
+  --primary-soft: #eceefd;
+
+  --ink: #1b2138;
+  --muted: #8a90a8;
+  --line: #edeff5;
+
+  --green: #21c286;
+  --green-soft: #e4f7f0;
+  --red: #f2547d;
+  --red-soft: #fde9ef;
+  --amber: #f5a93f;
+  --amber-soft: #fdf0df;
+  --teal: #38bfc9;
+  --teal-soft: #e3f6f8;
+
+  --radius: 14px;
+  --shadow: 0 2px 14px rgba(27, 33, 56, 0.05);
+  --shadow-lg: 0 18px 50px rgba(27, 33, 56, 0.16);
+
+  --sans: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --sidebar-w: 260px;
+}

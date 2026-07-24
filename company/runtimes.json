@@ -1,0 +1,80 @@
+{
+  "_note": "Runtime assignment for the virtual company. Provider is NOT a property of an agent .md — the same persona can be installed into several tools. It is a property of WHERE the agent is installed, so it lives here in the company layer, never in the catalog's frontmatter. Claude Code's subagent `model:` field only accepts Claude models (opus/sonnet/haiku/fable/inherit); running an agent on GPT or Gemini means installing it into Codex or Gemini CLI via scripts/convert.sh. `scoping` records what happens to the tools:/disallowedTools: allowlist on each runtime and is derived from reading scripts/convert.sh — re-check it if the converters change. Consumed by company/ui/build.py, which joins label/short/accent from the repo's tools.json so this file never duplicates tool metadata.",
+  "_scoping": {
+    "enforced": "Native format; Claude Code documents tools:/disallowedTools: and enforces them.",
+    "carried": "The converter writes a tools: field (or copies the file verbatim), but whether that runtime enforces it is UNVERIFIED — do not rely on it for isolation.",
+    "dropped": "scripts/convert.sh provably omits tools: for this format. Role scoping does not survive. An agent with a tool allowlist loses it here."
+  },
+  "default": {
+    "runtime": "claude-code",
+    "model": "inherit"
+  },
+  "runtimes": {
+    "claude-code": {
+      "provider": "Anthropic",
+      "scoping": "enforced"
+    },
+    "qwen": {
+      "provider": "Alibaba",
+      "scoping": "carried"
+    },
+    "zcode": {
+      "provider": "Z.ai (GLM)",
+      "scoping": "carried"
+    },
+    "copilot": {
+      "provider": "GitHub",
+      "scoping": "carried"
+    },
+    "codex": {
+      "provider": "OpenAI",
+      "scoping": "dropped"
+    },
+    "gemini-cli": {
+      "provider": "Google",
+      "scoping": "dropped"
+    },
+    "antigravity": {
+      "provider": "Google",
+      "scoping": "dropped"
+    },
+    "kimi": {
+      "provider": "Moonshot AI",
+      "scoping": "dropped"
+    },
+    "vibe": {
+      "provider": "Mistral",
+      "scoping": "dropped"
+    },
+    "cursor": {
+      "provider": "đa model",
+      "scoping": "dropped"
+    },
+    "windsurf": {
+      "provider": "đa model",
+      "scoping": "dropped"
+    },
+    "aider": {
+      "provider": "đa model",
+      "scoping": "dropped"
+    },
+    "opencode": {
+      "provider": "đa model",
+      "scoping": "dropped"
+    },
+    "openclaw": {
+      "provider": "đa model",
+      "scoping": "dropped"
+    },
+    "osaurus": {
+      "provider": "model chạy máy local",
+      "scoping": "dropped"
+    },
+    "hermes": {
+      "provider": "router đa model",
+      "scoping": "dropped"
+    }
+  },
+  "_assignments_note": "slug -> { runtime, model?, note? }. Empty means every agent runs on the company default. These are DECLARED INTENT: nothing installs from this file yet — Stage 2 of company/IMPLEMENTATION-PLAN.md is what makes it executable. `model` only means anything on claude-code (opus | sonnet | haiku | fable | inherit).",
+  "assignments": {}
+}

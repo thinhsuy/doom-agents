@@ -1,0 +1,16 @@
+{
+  "name": "agency-chat-mcp",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "MCP server exposing Team Chat tools so agent staff can communicate (create channel, send, react, read).",
+  "bin": { "agency-chat-mcp": "index.mjs" },
+  "scripts": {
+    "start": "node index.mjs",
+    "smoke": "node smoke.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.25.0"
+  }
+}

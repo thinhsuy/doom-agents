@@ -1,0 +1,127 @@
+.sidebar {
+  width: var(--sidebar-w);
+  flex: 0 0 var(--sidebar-w);
+  background: var(--navy);
+  color: #c9cede;
+  display: flex;
+  flex-direction: column;
+  padding: 26px 0 20px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.brand {
+  display: flex;
+  gap: 11px;
+  align-items: center;
+  padding: 0 24px;
+}
+.brandMark {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--primary);
+  display: grid;
+  place-items: center;
+  flex: 0 0 34px;
+}
+.brandName {
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+.brandSub {
+  font-size: 10.5px;
+  color: #767d9c;
+  margin-top: 1px;
+}
+
+.minimize {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  padding: 0 24px 16px;
+  margin: 16px 0 4px;
+  font-size: 12px;
+  color: #767d9c;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.navLabel {
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: #616892;
+  padding: 0 24px;
+  margin: 22px 0 8px;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 14px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #c9cede;
+  text-align: left;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+.item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+}
+.item svg {
+  flex: 0 0 19px;
+  opacity: 0.85;
+}
+.active {
+  background: var(--navy-2);
+  color: #fff;
+  font-weight: 600;
+}
+.active svg {
+  opacity: 1;
+}
+
+.badge {
+  margin-left: auto;
+  background: var(--red);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 21px;
+  height: 21px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  padding: 0 6px;
+}
+/* Neutral count (tasks, messages) — not an alert like the red decisions badge. */
+.badgeSoft {
+  background: rgba(255, 255, 255, 0.12);
+  color: #c9cede;
+}
+
+.spacer {
+  flex: 1;
+}
+
+@media (max-width: 900px) {
+  .sidebar {
+    display: none;
+  }
+}

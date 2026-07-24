@@ -1,0 +1,14 @@
+{
+  "name": "office-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Live backend for the Office tab — streams company activity from Postgres over WebSocket.",
+  "scripts": {
+    "start": "node index.mjs",
+    "smoke": "node smoke.mjs"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

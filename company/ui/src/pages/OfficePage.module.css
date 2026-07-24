@@ -1,0 +1,263 @@
+/* Office (left, flexible) + Team Chat (right, fixed) on ONE screen so the owner
+   watches agent animation and chats without switching tabs. */
+.split {
+  display: flex;
+  gap: 16px;
+  height: calc(100vh - 150px);
+  min-height: 480px;
+}
+.officeCol {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto; /* a tall office scrolls inside its own column */
+}
+.chatCol {
+  flex: 1 1 auto; /* absorbs every px the (board-locked) office column doesn't use */
+  min-width: 340px;
+  min-height: 0;
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 12px 18px;
+  flex-wrap: wrap;
+}
+.left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: 0 0 9px;
+}
+.online {
+  background: #21c286;
+  box-shadow: 0 0 0 3px #21c28633;
+}
+.connecting {
+  background: #f5a93f;
+  box-shadow: 0 0 0 3px #f5a93f33;
+}
+.offline {
+  background: #b6bccd;
+}
+.status {
+  font-size: 13px;
+  font-weight: 600;
+}
+.count {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.demo {
+  margin-left: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--primary);
+  border-radius: 8px;
+  padding: 7px 14px;
+  transition: opacity 0.15s;
+}
+.demo:hover:not(:disabled) {
+  opacity: 0.9;
+}
+.demo:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+/* Legend collapsed into a dropdown so it doesn't crowd the bar. */
+.legendWrap {
+  position: relative;
+}
+.legendBtn {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #5e6584;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 8px;
+  padding: 7px 12px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.legendBtn:hover,
+.legendBtnOn {
+  background: var(--bg);
+  border-color: #dfe3ee;
+}
+.legendMenu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 20;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  padding: 12px 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px 20px;
+  white-space: nowrap;
+}
+.leg {
+  font-size: 12px;
+  color: #5e6584;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.legE {
+  font-size: 13px;
+}
+
+.hint {
+  background: var(--amber-soft);
+  color: #95610c;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+.hint code {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  background: #ffffff66;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.stage {
+  position: relative;
+  background: #2b2f45;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 2px;
+  overflow: auto;
+  max-height: calc(100vh - 220px);
+}
+.board {
+  position: relative;
+  margin: 0; /* office hugs the LEFT edge; the small remainder sits right (owner's call) */
+}
+.canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+/* Floor-picker overlay: transparent to the mouse except the selects, so canvas
+   hover still works between them. */
+.overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.floorSelect {
+  position: absolute;
+  pointer-events: auto;
+  width: 48px;
+  height: 22px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #eef0f7;
+  background: rgba(20, 22, 40, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  padding: 0 2px;
+  cursor: pointer;
+  backdrop-filter: blur(2px);
+}
+.floorSelect:hover {
+  background: rgba(20, 22, 40, 0.9);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+.floorSelect option {
+  color: #1b2138;
+  background: #fff;
+}
+
+/* Status badges + speech bubbles as HTML — flexbox centres the emoji reliably
+   (canvas colour-emoji centring is unreliable). Positioned in world px × zoom. */
+.avatar {
+  display: contents;
+}
+.bubble {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  background: #fff;
+  border-style: solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  padding: 0 3px;
+  box-sizing: border-box;
+  pointer-events: none;
+  box-shadow: 0 1px 4px rgba(20, 22, 40, 0.28);
+  z-index: 3;
+}
+.badge {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border-style: solid;
+  border-color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 4;
+}
+.badgeWork {
+  background: #4e5ae8;
+}
+.badgeWait {
+  background: #f5a93f;
+}
+.loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #c4c8d8;
+  font-size: 13px;
+}
+.tip {
+  position: absolute;
+  pointer-events: none;
+  background: var(--navy);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  z-index: 5;
+}
+
+@media (max-width: 1100px) {
+  .split {
+    flex-direction: column;
+    height: auto;
+  }
+  .chatCol {
+    flex: none;
+    height: 70vh;
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "source": "Postgres · doom_agents.company.decisions",
+  "note": "Hàng đợi quyết định LIVE từ DB. Lead/manager tạo ticket quyết định qua tool `raise_decision` khi cần CEO/CTO phê duyệt. Không seed mock nữa (dọn 2026-07-24).",
+  "decisions": []
+}

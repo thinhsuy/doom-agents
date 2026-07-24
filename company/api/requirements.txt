@@ -1,0 +1,6 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+# Agent replies (optional, per configured provider):
+openai>=1.40             # GPT via OPENAI_API_KEY
+anthropic>=0.40          # Claude via AWS Bedrock (AnthropicBedrock)
+boto3>=1.34              # AWS creds/signing for Bedrock

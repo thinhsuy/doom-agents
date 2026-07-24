@@ -1,0 +1,4 @@
+node_modules/
+
+# Root ignores lockfiles globally; this is a real npm project — commit its lock.
+!package-lock.json

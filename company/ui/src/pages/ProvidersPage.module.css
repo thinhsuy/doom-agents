@@ -1,0 +1,224 @@
+.catalog {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  padding: 18px 24px 22px;
+}
+.rt {
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  padding: 13px 14px;
+}
+.rtTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.rtMark {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: 0 0 10px;
+}
+.rtName {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.rtProvider {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 9px;
+}
+.scope {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border-radius: 5px;
+  padding: 3px 7px;
+  display: inline-block;
+}
+.scopeEnforced {
+  background: var(--green-soft);
+  color: #149467;
+}
+.scopeCarried {
+  background: var(--amber-soft);
+  color: #c77c12;
+}
+.scopeDropped {
+  background: var(--red-soft);
+  color: #d93463;
+}
+
+/* assignment table */
+.scroll {
+  overflow-x: auto;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;
+}
+.table thead th {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  text-align: left;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.table thead th:first-child {
+  padding-left: 24px;
+}
+.row {
+  border-bottom: 1px solid var(--line);
+}
+.row:last-child {
+  border-bottom: 0;
+}
+.table td {
+  padding: 12px 16px;
+  font-size: 13px;
+  vertical-align: middle;
+}
+.table td:first-child {
+  padding-left: 24px;
+}
+.who {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  flex: 0 0 28px;
+  background: var(--bg);
+}
+.currentChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: #5e6584;
+  background: var(--bg);
+  border-radius: 7px;
+  padding: 4px 9px;
+}
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+}
+.select {
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid #e4e7f0;
+  border-radius: 8px;
+  padding: 7px 10px;
+  min-width: 150px;
+}
+.select:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+.changed {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-soft);
+}
+.warn {
+  font-size: 11px;
+  color: #c77c12;
+  margin-top: 4px;
+}
+.bad {
+  font-size: 11px;
+  color: #d93463;
+  margin-top: 4px;
+}
+
+/* ---- provider status cards ---- */
+.providerCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.providerCard {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px 18px;
+}
+.providerTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.providerName {
+  font-size: 15px;
+  font-weight: 600;
+}
+.ok {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #149467;
+}
+.missing {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #d93463;
+}
+.providerModels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.modelChip {
+  font-size: 11.5px;
+  color: #5e6584;
+  background: var(--bg);
+  border-radius: 7px;
+  padding: 4px 10px;
+}
+.providerHint {
+  margin-top: 10px;
+  font-size: 11.5px;
+  color: #95610c;
+  background: var(--amber-soft);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+/* ---- per-agent model table ---- */
+.tableWrap {
+  overflow-x: auto;
+}
+.div {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: capitalize;
+}
+.modelCell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.defaultTag {
+  font-size: 10.5px;
+  color: var(--muted);
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 2px 7px;
+}

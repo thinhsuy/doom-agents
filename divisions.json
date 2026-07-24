@@ -8,6 +8,7 @@
     "game-development": { "label": "Game Development", "icon": "Gamepad2", "color": "#A855F7" },
     "gis": { "label": "GIS", "icon": "Map", "color": "#14B8A6" },
     "healthcare": { "label": "Healthcare", "icon": "Stethoscope", "color": "#0D9488" },
+    "hr": { "label": "HR", "icon": "UserPlus", "color": "#F43F5E" },
     "marketing": { "label": "Marketing", "icon": "Megaphone", "color": "#F97316" },
     "paid-media": { "label": "Paid Media", "icon": "Target", "color": "#EAB308" },
     "product": { "label": "Product", "icon": "Box", "color": "#D946EF" },

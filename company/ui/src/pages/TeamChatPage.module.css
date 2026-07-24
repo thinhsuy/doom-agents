@@ -1,0 +1,865 @@
+/* Embedded chat panel (right column of the Office screen). One view at a time:
+   channel LIST → drill into a THREAD (narrow width = no side-by-side columns). */
+.panel {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  position: relative;
+}
+.listView {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.channelScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.railHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: #a0a6bc;
+  text-transform: uppercase;
+  padding: 12px 14px 8px 18px;
+}
+.newBtn {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--primary);
+  background: var(--primary-soft);
+  border-radius: 7px;
+  padding: 4px 9px;
+  transition: opacity 0.12s;
+}
+.newBtn:hover:not(:disabled) {
+  opacity: 0.85;
+}
+.newBtn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.channel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 18px;
+  text-align: left;
+  transition: background 0.12s;
+}
+.channel:hover {
+  background: #f7f9fd;
+}
+.channelActive,
+.channelActive:hover {
+  background: var(--primary-soft);
+}
+.hash {
+  font-size: 15px;
+  color: #b6bccd;
+  flex: 0 0 auto;
+}
+.channelActive .hash {
+  color: var(--primary);
+}
+.channelBody {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.channelName {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.channelSub {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+}
+/* Messenger-style unread badge — only rendered when unread > 0 */
+.channelUnread {
+  flex: 0 0 auto;
+  min-width: 20px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--primary);
+  border-radius: 10px;
+  padding: 2px 7px;
+}
+.channelNameUnread {
+  font-weight: 700;
+  color: #2b3152;
+}
+
+/* ---- thread ---- */
+.thread {
+  flex: 1;
+  min-width: 0;
+  min-height: 0; /* let the inner .stream scroll instead of growing the column */
+  display: flex;
+  flex-direction: column; /* chrome comes from .panel */
+}
+.backBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  color: #5e6584;
+  font-size: 14px;
+  line-height: 1;
+  flex: 0 0 28px;
+  display: grid;
+  place-items: center;
+  transition: color 0.12s, border-color 0.12s;
+}
+.backBtn:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+.threadHeadMain {
+  flex: 1;
+  min-width: 0;
+}
+.threadHead {
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--line);
+}
+.threadHeadTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.threadActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+.delBtn {
+  font-size: 11.5px;
+  color: #8a90a8;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 5px 10px;
+  transition: color 0.12s, border-color 0.12s;
+}
+.delBtn:hover {
+  color: #d93463;
+  border-color: #d93463;
+}
+.delConfirm {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #fff;
+  background: #d93463;
+  border-radius: 8px;
+  padding: 5px 10px;
+}
+.delCancel {
+  font-size: 11.5px;
+  color: #5e6584;
+  border-radius: 8px;
+  padding: 5px 8px;
+}
+.delCancel:hover {
+  background: var(--bg);
+}
+/* ---- group info popup (the (!) button, top-right of the thread header) ---- */
+.groupPopWrap {
+  position: relative;
+  flex: 0 0 auto;
+}
+.infoBtn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  color: #8a90a8;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  transition: color 0.12s, border-color 0.12s, background 0.12s;
+}
+.infoBtn:hover,
+.infoBtnOn {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+.popBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+}
+.groupPop {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 300px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  box-shadow: var(--shadow-lg);
+  padding: 14px;
+  z-index: 61;
+}
+.popTitle {
+  font-size: 13.5px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.popLabel {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #a0a6bc;
+  margin: 10px 0 5px;
+}
+.renameRow {
+  display: flex;
+  gap: 6px;
+}
+.popInput {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 10px;
+  font-size: 12.5px;
+  background: #fff;
+  outline: none;
+}
+.popInput:focus {
+  border-color: var(--primary);
+}
+.popSave {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--primary);
+  color: #fff;
+}
+.popSave:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+/* member list: 5 rows visible, then scroll */
+.popMembers {
+  max-height: 170px; /* ≈ 5 rows */
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 3px;
+}
+.popMember {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 7px;
+  font-size: 12.5px;
+}
+.popMember:hover {
+  background: var(--bg);
+}
+.popMemberName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.popEmpty {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  line-height: 1.5;
+}
+.popMembers .popEmpty {
+  border: 0; /* container already draws the border */
+}
+.popEngNote {
+  font-size: 11.5px;
+  color: #95610c;
+  background: var(--amber-soft);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-top: 8px;
+  line-height: 1.5;
+}
+.popDanger {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.memberChipEmoji {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--bg);
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  flex: 0 0 20px;
+}
+.threadTitle {
+  font-size: 15px;
+  font-weight: 600;
+}
+.threadSub {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.stream {
+  padding: 20px 22px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+}
+.threadEmpty {
+  margin: auto;
+  color: #b6bccd;
+  font-size: 13px;
+}
+
+/* ---- composer (owner sends a message; @mention DMs an agent) ---- */
+.composer {
+  border-top: 1px solid var(--line);
+  padding: 12px 16px;
+  background: #fcfcfe;
+}
+.composerBox {
+  position: relative;
+}
+.composerRow {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end; /* send button hugs the bottom as the box grows */
+}
+.composerTarget {
+  font-size: 11.5px;
+  color: var(--primary);
+  margin-top: 6px;
+  padding-left: 2px;
+}
+/* @mention autocomplete popover, above the input */
+.mentionMenu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  min-width: 240px;
+  max-width: 340px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  padding: 6px;
+  z-index: 30;
+}
+.mentionItem {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 9px;
+  border-radius: 8px;
+  text-align: left;
+  font-size: 13px;
+}
+.mentionItem:hover,
+.mentionOn {
+  background: var(--primary-soft);
+}
+.mentionAvatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  flex: 0 0 24px;
+}
+.mentionName {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.composerInput {
+  flex: 1;
+  min-width: 0;
+  min-height: 38px;
+  max-height: 118px; /* ≈5 lines — beyond that it scrolls inside */
+  height: 38px; /* JS autosizes up to the cap */
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 14px;
+  font-size: 13.5px;
+  font-family: inherit;
+  line-height: 1.45;
+  background: #fff;
+  outline: none;
+  resize: none;
+  overflow-y: auto;
+}
+.composerInput:focus {
+  border-color: var(--primary);
+}
+.composerSend {
+  height: 38px;
+  padding: 0 20px;
+  border-radius: 10px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+  transition: opacity 0.15s;
+}
+.composerSend:hover:not(:disabled) {
+  opacity: 0.9;
+}
+.composerSend:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.composerOffline {
+  font-size: 12.5px;
+  color: var(--muted);
+  padding: 4px 2px;
+}
+
+.msg {
+  display: flex;
+  gap: 11px;
+}
+.msgAvatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  flex: 0 0 34px;
+}
+.msgBody {
+  flex: 1;
+  min-width: 0;
+}
+.msgTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 3px;
+  flex-wrap: wrap;
+}
+.msgFrom {
+  font-size: 13px;
+  font-weight: 600;
+}
+.msgTo {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.msgTime {
+  font-size: 11px;
+  color: #b6bccd;
+  margin-left: auto;
+}
+.kind {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border-radius: 5px;
+  padding: 2px 7px;
+  text-transform: uppercase;
+}
+.kindHandoff { background: var(--primary-soft); color: var(--primary); }
+.kindQa { background: var(--amber-soft); color: #c77c12; }
+.kindEscalation { background: var(--red-soft); color: #d93463; }
+.kindRuling { background: var(--green-soft); color: #149467; }
+.kindChat { background: var(--bg); color: #6e7590; }
+.kindNote { background: var(--bg); color: #6e7590; }
+
+.msgText {
+  font-size: 13.5px;
+  color: #3a4162;
+  line-height: 1.6;
+}
+/* ---- markdown content inside a message (react-markdown output) ---- */
+.msgText p {
+  margin: 0 0 6px;
+}
+.msgText p:last-child {
+  margin-bottom: 0;
+}
+.msgText ul,
+.msgText ol {
+  margin: 4px 0 6px;
+  padding-left: 20px;
+}
+.msgText li {
+  margin: 2px 0;
+}
+.msgText strong {
+  font-weight: 700;
+  color: #2b3152;
+}
+.msgText code {
+  font-family: var(--mono);
+  font-size: 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 1px 5px;
+}
+.msgText pre {
+  background: var(--navy);
+  color: #eef0f7;
+  border-radius: 8px;
+  padding: 10px 12px;
+  overflow-x: auto;
+  margin: 6px 0;
+}
+.msgText pre code {
+  background: none;
+  border: 0;
+  color: inherit;
+  padding: 0;
+  font-size: 12px;
+}
+.msgText h1,
+.msgText h2,
+.msgText h3,
+.msgText h4 {
+  font-size: 13.5px;
+  font-weight: 700;
+  margin: 8px 0 4px;
+}
+.msgText blockquote {
+  border-left: 3px solid var(--line);
+  margin: 6px 0;
+  padding: 2px 10px;
+  color: var(--muted);
+}
+.msgText a {
+  color: var(--primary);
+  text-decoration: underline;
+}
+.msgText table {
+  border-collapse: collapse;
+  margin: 6px 0;
+  font-size: 12.5px;
+}
+.msgText th,
+.msgText td {
+  border: 1px solid var(--line);
+  padding: 4px 8px;
+}
+.msgText hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 8px 0;
+}
+.msgTask {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--primary);
+  margin-top: 5px;
+  display: inline-block;
+}
+
+.reactions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+/* owner adds a reaction */
+.reactAddWrap {
+  position: relative;
+  display: inline-flex;
+}
+.reactAdd {
+  font-size: 12px;
+  line-height: 1;
+  color: #9aa0b8;
+  background: transparent;
+  border: 1px dashed var(--line);
+  border-radius: 20px;
+  padding: 4px 9px;
+  opacity: 0;
+  transition: opacity 0.12s, border-color 0.12s, color 0.12s;
+}
+.msg:hover .reactAdd,
+.reactAdd:focus {
+  opacity: 1;
+}
+.reactAdd:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+.palette {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  display: flex;
+  gap: 2px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: var(--shadow-lg);
+  padding: 4px 6px;
+  z-index: 40;
+}
+.paletteBtn {
+  font-size: 15px;
+  line-height: 1;
+  padding: 4px 5px;
+  border-radius: 50%;
+  transition: transform 0.1s, background 0.1s;
+}
+.paletteBtn:hover {
+  transform: scale(1.25);
+  background: var(--bg);
+}
+
+/* ---- create-group modal ---- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(23, 28, 50, 0.45);
+  display: grid;
+  place-items: center;
+  z-index: 90;
+}
+.modal {
+  width: min(460px, calc(100vw - 40px));
+  max-height: min(640px, calc(100vh - 60px));
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  padding: 18px;
+}
+.modalTitle {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+.modalInput {
+  width: 100%;
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 0 12px;
+  font-size: 13px;
+  margin-bottom: 8px;
+  background: #fff;
+  outline: none;
+}
+.modalInput:focus {
+  border-color: var(--primary);
+}
+.memberHead {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin: 6px 0 6px;
+}
+.memberList {
+  flex: 1;
+  min-height: 120px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 4px;
+}
+.memberItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.memberItem:hover {
+  background: var(--bg);
+}
+.memberAvatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  flex: 0 0 22px;
+}
+.memberName {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.memberDiv {
+  margin-left: auto;
+  font-size: 10.5px;
+  color: var(--muted);
+  text-transform: capitalize;
+  flex: 0 0 auto;
+}
+.modalErr {
+  font-size: 12px;
+  color: #d93463;
+  margin-top: 8px;
+}
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+.modalGhost {
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 9px;
+  color: #5e6584;
+}
+.modalGhost:hover {
+  background: var(--bg);
+}
+.modalPrimary {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 9px;
+  background: var(--primary);
+  color: #fff;
+}
+.modalPrimary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.modalPrimary:hover:not(:disabled) {
+  opacity: 0.9;
+}
+.reactionWrap {
+  position: relative;
+  display: inline-flex;
+  outline: none;
+}
+.reaction {
+  font-size: 12px;
+  line-height: 1;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 4px 9px;
+  color: #5e6584;
+  cursor: default;
+  transition: border-color 0.12s, background 0.12s;
+}
+.reaction:hover,
+.reactionOn {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+/* Slack-style "who reacted" tooltip. Portalled to <body> with position:fixed so
+   the scrollable message list can't clip it. JS sets left/top from the chip rect;
+   the default variant anchors its BOTTOM at top (above the chip), .tipBelow
+   anchors its TOP at top (below the chip). */
+.tip {
+  position: fixed;
+  z-index: 100;
+  width: 200px;
+  background: var(--navy);
+  color: #eef0f7;
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: var(--shadow-lg);
+  pointer-events: none;
+  transform: translateY(-100%); /* anchor bottom at the given top => sits above chip */
+}
+.tipBelow {
+  transform: none; /* anchor top at the given top => sits below chip */
+}
+/* arrow: points down (above variant) / up (below variant) */
+.tip::after {
+  content: '';
+  position: absolute;
+  left: 16px;
+  border: 6px solid transparent;
+}
+.tip:not(.tipBelow)::after {
+  top: 100%;
+  border-top-color: var(--navy);
+}
+.tipBelow::after {
+  bottom: 100%;
+  border-bottom-color: var(--navy);
+}
+.tipEmoji {
+  font-size: 20px;
+  display: block;
+  margin-bottom: 6px;
+}
+.tipList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12.5px;
+}
+.tipAgent {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 500;
+}
+.tipAvatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  flex: 0 0 18px;
+}
+.tipVerb {
+  color: #9aa2c0;
+  font-size: 11.5px;
+  margin-top: 2px;
+}
+
+

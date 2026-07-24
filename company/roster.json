@@ -1,0 +1,51 @@
+{
+  "_note": "Ai đã được TUYỂN vào công ty ảo. Catalog 251 agent là kho ứng viên; file này là biên chế thực tế. Không xoá file agent nào — chỉ agent trong danh sách này mới được cài vào ~/.claude/agents (Stage 2), nên nó quyết định chi phí và độ nhiễu. Sửa file rồi chạy `npm run data` trong company/ui. Tiêu chí do owner đặt: làm sản phẩm công nghệ, làm trực tiếp, KHÔNG marketing và KHÔNG bán hàng.",
+
+  "_excluded": "Cắt trọn 8 division không thuộc phạm vi: marketing (36), gis (13), sales (9), paid-media (7), academic (6), spatial-computing (6), game-development (5), healthcare (3). Trong engineering bỏ các chuyên gia hẹp theo nền tảng/vùng (Drupal, WordPress, CMS, WeChat, Feishu, USWDS, GaussDB, Solidity, IoT, embedded, video streaming, voice AI, WebAssembly...). Trong specialized bỏ các vai trò ngành khác (legal, medical, real-estate, hospitality, loan, HR, recruitment, grant, resume...).",
+
+  "_optional": "Thêm nếu đúng lĩnh vực của bạn — tôi không biết bạn làm sản phẩm gì cụ thể: MOBILE → engineering-mobile-app-builder, engineering-mobile-release-engineer. AI/LLM → engineering-ai-engineer, engineering-prompt-engineer, engineering-rag-pipeline-engineer, specialized-model-qa-specialist. THANH TOÁN → engineering-payments-billing-engineer. ĐA NGÔN NGỮ → engineering-internationalization-engineer. TIẾP CẬN (a11y) → testing-accessibility-auditor, engineering-section-508-accessibility-specialist. CHI PHÍ CLOUD → engineering-finops-engineer. BLOCKCHAIN → engineering-solidity-smart-contract-engineer, security-blockchain-security-auditor.",
+
+  "hired": {
+    "engagement-director":                    { "group": "Điều hành", "why": "Cổng vào duy nhất: yêu cầu → engagement brief, chọn quy mô, ráp đội, định tuyến escalation" },
+    "agents-orchestrator":                    { "group": "Điều hành", "why": "Điều khiển pipeline NEXUS, quản vòng lặp Dev↔QA và quality gate" },
+    "project-manager-senior":                 { "group": "Điều hành", "why": "Chuyển spec thành task với scope thực tế, không vẽ vời" },
+
+    "product-business-analyst":               { "group": "Sản phẩm", "why": "Yêu cầu thô → spec kiểm thử được; giữ ambiguity register" },
+    "product-owner":                          { "group": "Sản phẩm", "why": "Quyền accept/reject duy nhất; sở hữu Definition of Done" },
+    "product-sprint-prioritizer":             { "group": "Sản phẩm", "why": "Xếp thứ tự backlog theo giá trị" },
+
+    "design-ux-architect":                    { "group": "Thiết kế", "why": "Luồng và kiến trúc thông tin trước khi code" },
+    "design-ui-designer":                     { "group": "Thiết kế", "why": "Giao diện và design system" },
+
+    "engineering-software-architect":         { "group": "Kỹ thuật", "why": "Quyết định kiến trúc tổng thể" },
+    "engineering-backend-architect":          { "group": "Kỹ thuật", "why": "API, dịch vụ, mô hình dữ liệu" },
+    "engineering-frontend-developer":         { "group": "Kỹ thuật", "why": "Giao diện web" },
+    "engineering-senior-developer":           { "group": "Kỹ thuật", "why": "Lập trình viên tổng quát cho phần lớn task" },
+    "engineering-rapid-prototyper":           { "group": "Kỹ thuật", "why": "Dựng thin slice nhanh để validate trước khi làm thật" },
+    "engineering-minimal-change-engineer":    { "group": "Kỹ thuật", "why": "Sửa lỗi với thay đổi nhỏ nhất — chống phình scope" },
+    "engineering-code-reviewer":              { "group": "Kỹ thuật", "why": "Review độc lập trước khi qua QA" },
+    "engineering-data-engineer":              { "group": "Kỹ thuật", "why": "Pipeline và mô hình dữ liệu" },
+    "engineering-database-optimizer":         { "group": "Kỹ thuật", "why": "Hiệu năng truy vấn và schema" },
+    "engineering-devops-automator":           { "group": "Kỹ thuật", "why": "CI/CD, build, deploy" },
+    "engineering-sre":                        { "group": "Kỹ thuật", "why": "Độ tin cậy, SLO, vận hành production" },
+    "engineering-git-workflow-master":        { "group": "Kỹ thuật", "why": "Chiến lược branch, merge, release" },
+    "engineering-technical-writer":           { "group": "Kỹ thuật", "why": "Tài liệu kỹ thuật và bàn giao" },
+
+    "testing-evidence-collector":             { "group": "QA", "why": "GÁC CỔNG — thu bằng chứng cho mọi quality gate" },
+    "testing-reality-checker":                { "group": "QA", "why": "GÁC CỔNG — kiểm tra thứ được giao có thật sự chạy" },
+    "testing-test-automation-engineer":       { "group": "QA", "why": "Bộ test tự động, chống hồi quy" },
+    "testing-api-tester":                     { "group": "QA", "why": "Kiểm thử hợp đồng API" },
+
+    "security-appsec-engineer":               { "group": "Bảo mật", "why": "Bảo mật tầng ứng dụng trong lúc build" },
+    "security-architect":                     { "group": "Bảo mật", "why": "Mô hình mối đe doạ, quyết định bảo mật kiến trúc" },
+    "security-secrets-credential-engineer":   { "group": "Bảo mật", "why": "Quản lý secret — repo này vừa lộ token trong git remote" },
+
+    "engineering-incident-response-commander": { "group": "Vận hành", "why": "Chỉ huy khi production hỏng" },
+    "support-infrastructure-maintainer":      { "group": "Vận hành", "why": "Sức khoẻ hạ tầng, bảo trì thường kỳ" },
+
+    "support-finance-tracker":                { "group": "Tài chính", "why": "Theo dõi budget envelope theo engagement (Stage 5)" },
+
+    "hr-talent-acquisition-lead":             { "group": "Nhân sự (HR)", "why": "Chủ pipeline tuyển: nhu cầu role của CEO/CTO → agent mới trên biên chế + có desk ở office" },
+    "hr-agent-sourcer":                       { "group": "Nhân sự (HR)", "why": "Search web tìm skills/agent template khớp role, xếp shortlist cho Talent Lead draft" }
+  }
+}

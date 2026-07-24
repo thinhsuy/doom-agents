@@ -1,0 +1,12 @@
+{
+  "name": "runner",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Orchestration runtime slice — drives tasks through the NEXUS Dev↔QA loop, writing real bounded state to Postgres.",
+  "scripts": {
+    "start": "node run.mjs",
+    "reset": "node run.mjs --reset",
+    "smoke": "node smoke.mjs"
+  }
+}

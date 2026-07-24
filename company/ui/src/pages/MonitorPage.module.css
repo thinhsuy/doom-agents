@@ -1,0 +1,148 @@
+.notice {
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+  background: var(--amber-soft);
+  border-radius: 11px;
+  padding: 14px 17px;
+  margin-bottom: 20px;
+  font-size: 12.5px;
+  color: #95610c;
+  line-height: 1.6;
+}
+.notice svg {
+  flex: 0 0 17px;
+  margin-top: 2px;
+}
+
+/* pricing reference strip */
+.prices {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px;
+  padding: 16px 24px 20px;
+}
+.price {
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  padding: 12px 14px;
+}
+.priceModel {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.priceRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #5e6584;
+  margin-bottom: 3px;
+}
+.priceRow b {
+  color: var(--ink);
+  font-weight: 600;
+}
+.priceNote {
+  font-size: 10.5px;
+  color: var(--amber);
+  margin-top: 6px;
+}
+
+/* usage table */
+.scroll {
+  overflow-x: auto;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 820px;
+}
+.table thead th {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  text-align: left;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.table thead th:first-child {
+  padding-left: 24px;
+}
+.table thead th.num,
+.table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.row {
+  border-bottom: 1px solid var(--line);
+}
+.row:last-child {
+  border-bottom: 0;
+}
+.table td {
+  padding: 12px 16px;
+  font-size: 13px;
+  vertical-align: middle;
+}
+.table td:first-child {
+  padding-left: 24px;
+}
+.who {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  flex: 0 0 28px;
+  background: var(--bg);
+}
+.sub {
+  font-size: 11px;
+  color: var(--muted);
+}
+.cost {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+/* cost-share bar */
+.barCell {
+  min-width: 130px;
+}
+.bar {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--bg);
+  overflow: hidden;
+}
+.barFill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #4e5ae8, #7b84f0);
+}
+.modelChip {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: #6e7590;
+  background: var(--bg);
+  border-radius: 5px;
+  padding: 2px 6px;
+  margin-right: 4px;
+}
+.tfoot td {
+  padding: 13px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-top: 2px solid var(--line);
+}
+.tfoot td:first-child {
+  padding-left: 24px;
+}

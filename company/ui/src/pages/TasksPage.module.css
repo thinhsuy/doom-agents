@@ -1,0 +1,182 @@
+.board {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.col {
+  flex: 0 0 288px;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 240px);
+}
+
+.colHead {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 15px 16px 13px;
+  border-bottom: 1px solid var(--line);
+}
+.colDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: 0 0 9px;
+}
+.colName {
+  font-size: 13px;
+  font-weight: 600;
+}
+.colCount {
+  margin-left: auto;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #6e7590;
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 2px 9px;
+}
+
+.cards {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+}
+.colEmpty {
+  padding: 20px 12px;
+  text-align: center;
+  color: #b6bccd;
+  font-size: 12px;
+}
+
+.card {
+  position: relative;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  padding: 12px 13px 12px 16px;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+  overflow: hidden;
+  transition: box-shadow 0.15s, transform 0.15s, border-color 0.15s;
+}
+.card:hover {
+  box-shadow: 0 6px 18px rgba(27, 33, 56, 0.09);
+  transform: translateY(-1px);
+  border-color: #dfe3ee;
+}
+.cardSelected {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+/* priority spine down the left edge */
+.priorityBar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.prio {
+  margin-left: auto;
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.comments {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #6e7590;
+}
+.tid {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+.req {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--primary);
+  background: var(--primary-soft);
+  border-radius: 5px;
+  padding: 2px 6px;
+}
+.cardTitle {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  margin-bottom: 10px;
+}
+
+.cardFoot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.assignee {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: #5e6584;
+  min-width: 0;
+}
+.avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  flex: 0 0 22px;
+}
+.assigneeName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+/* Attempt pips toward the NEXUS 3-retry cap. */
+.attempt {
+  font-size: 10.5px;
+  font-weight: 600;
+  border-radius: 5px;
+  padding: 2px 6px;
+}
+.attemptOk {
+  background: var(--bg);
+  color: #6e7590;
+}
+.attemptWarn {
+  background: var(--amber-soft);
+  color: #c77c12;
+}
+.blocked {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #d93463;
+  background: var(--red-soft);
+  border-radius: 5px;
+  padding: 2px 6px;
+}
