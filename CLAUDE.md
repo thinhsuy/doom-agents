@@ -255,7 +255,42 @@ Tables: `agents`, `engagements`, `sessions`, `tasks`, `task_comments`, `messages
   (DB CHECK + chat tool + MCP + board's "Hoãn / Huỷ / Escalate" column) and REQUIRES a
   `reason` (rejected without one at both tool layers), logged to the timeline + a ⛔ comment.
 
-**Sidebar has a WORKSPACE group** (Office / Tasks — **Team Chat merged INTO the Office screen
+**Documents tab — company knowledge base + "document-first, implement-second" (migration
+`011_documents.sql`, 2026-07-24).** `company.documents` (folder + name + format + content +
+author, UNIQUE(folder,name)) and `company.doc_folders`; format defaults to `markdown` (also
+mermaid/ppt/text/json/code/csv/html). EVERY hired agent (staff too, not just leads) gets 4
+scoped tools — `list_docs`/`read_doc`/`create_folder`/`write_doc` (`_DOC_TOOL_NAMES`, open to
+all in `_exec_tool`; the worker's `__reader__` read-step is the only exception — view_db only).
+`write_doc` is create-or-update and auto-creates the folder; author is stored NULL if the actor
+isn't a hired agent (so the worker path never violates the FK). The base system prompt carries
+the document-first rule for all agents. **The RELIABLE mechanism is the worker**: when a staff
+agent produces a deliverable, the backend deterministically saves it to
+`<engagement>/deliverables/<taskId>.md` (Python `_t_write_doc`, NOT an LLM tool-call) — verified
+end-to-end (T-950 → `ENG-OPS/deliverables/T-950.md` appeared at the in_qa transition, authored
+by the assignee). The chat-driven `write_doc` (an agent writing a doc when asked in chat) is
+available but MODEL-DEPENDENT: Haiku 4.5 often "announces" ("Tôi sẽ viết…:") instead of calling
+the tool, so it's unreliable on the cheap model — the deterministic worker path is what makes
+document-first real. FE: `/workspace/docs` tab (sidebar WORKSPACE group), LIVE from `/api/docs`
+(poll 5s), folder→file rail + markdown/raw viewer (`DocumentsPage`). Console is read-only; agents
+write via tools.
+
+**Self-learning agents (migration `012_agent_learnings.sql`, 2026-07-24).** Staff agents
+accumulate skills/knowledge/lessons and adapt: `company.agent_learnings` (agent, kind
+skill|knowledge|lesson|correction, content, source self|experience|owner, task_id). EVERY
+hired agent gets one self-scoped tool `record_learning` (`_SELF_TOOL_NAMES`, open in
+`_exec_tool` but writes to the ACTOR only — the tool takes NO agent argument, identity comes
+from context, so an agent can adjust ONLY its own skills, never another's; `__reader__` and
+non-agents are rejected). Recent learnings (last 20) are injected into the agent's system
+prompt via `_learnings_block(slug)` in `_compose_reply` AND the worker's staff work-step, so
+they actually shape behaviour. Two sources: (1) **reliable, deterministic** — when a task is
+REJECTED in the worker, the assignee auto-records the reviewer's feedback as a
+`correction`/`experience` learning (no LLM tool-call, always fires); (2) chat `record_learning`
+when the CEO/CTO reminds/corrects an agent (`source='owner'`) — model-dependent like write_doc.
+Verified: two agents' learnings stay separate, `_learnings_block` returns only the agent's own,
+non-agent write rejected. Owner sees them in the Nhân sự drawer (`🎓 Đã học` section, live from
+`/api/agent-learnings/{slug}`, hidden until non-empty).
+
+**Sidebar has a WORKSPACE group** (Office / Tasks / Documents — **Team Chat merged INTO the Office screen
 2026-07-23**, owner's call: watch agent animation and chat on ONE screen instead of tab-switching).
 `OfficePage` is now a split: pixel office left (flex, its ResizeObserver re-packs rooms to the
 narrower width), `TeamChatPanel` right (`clamp(340px, 30vw, 420px)`; stacks vertically under
@@ -428,6 +463,27 @@ office-server's `GET`/`POST /config/floors` (CORS-enabled), with `localStorage` 
 offline fallback — so DB > localStorage > default. This is the console's first *write-back* to
 the DB from the browser (via the office-server), complementing the read-only WS stream.
 
+**Emergency brakes (2026-07-24) — runtime-configurable via `company.office_config`, no restart.**
+Audit found the LLM loops were individually bounded (`_TOOL_ROUNDS=6` per reply, NEXUS attempt
+cap 3→escalate, 1 task/`WORKER_POLL_S`, `max_tokens` caps, NO agent→agent chat cascade) but had
+no GLOBAL kill or spend ceiling. Added: (1) **daily cost ceiling + warn threshold** (`budget`
+key `{ceilingUsd,warnUsd}`, env default `MAX_DAILY_USD=5`) — `_refresh_budget()` runs each worker
+tick, sums today's real `usage_costed`, warns at threshold and **auto-latches a stop** at the
+ceiling (stays stopped until the owner resumes AND spend is back under — fail-safe); (2) **manual
+emergency stop** (`worker_paused` key, `POST /api/worker/pause|resume`); both gate BOTH the worker
+(`worker_loop` skips) AND every chat reply (`_llm_reply` returns a "⛔ Tạm dừng" notice, no LLM
+call). (3) **Per-model LLM timeout** (`model_timeouts` key, applied as `timeout=` on each
+OpenAI/Bedrock call so a stuck call can't hang; defaults default60/haiku45/sonnet90/gpt-4o-mini45/
+gpt-4o90s). (4) **Cheap fan-out triage**: a no-mention group message now runs a tiny
+`_should_answer` gate per member (short prompt, no tools, ~8 out tokens) and only opt-ins do the
+full reply — ~6–13× cheaper per non-answering member than the old "every member does a full reply
+then PASS". UI: a **Phanh chi phí** card on the Monitor tab (`BudgetControls`, live `/api/budget`)
+— spend/threshold/ceiling bar, one-click 🛑 stop/▶ resume, a **Ngày/Tháng/Quý/Năm** cost strip
+(period spends from `usage_costed` FILTER-by-date; estimated period ceilings = daily × 30/90/365,
+display-only — only the DAILY ceiling auto-stops), and a **⚙️ Cài đặt popup** holding the editable
+ceiling/warn + per-model timeout inputs (moved out of the always-visible card). All verified
+(manual pause blocks, low-ceiling auto-latches, timeouts resolve per model, period sums correct).
+
 **Board ↔ Office parity (2026-07-23):** every task status maps 1:1 to animation — `todo` 📋
 bubble on the assignee, `in_progress` = persistent ⌨️ + typing pose, `in_qa` = persistent 🔍 +
 reading pose on the REVIEWER (reporting lead, PO fallback — `reviewerOf()` in engine.ts mirrors
@@ -494,8 +550,12 @@ breakdown, on both Bedrock Haiku 4.5 and gpt-4o-mini. Which LLM answers is **per
 (migration `007_agent_runtime.sql`), edited on the **Providers tab** (`GET /api/providers` +
 `POST /api/agent-runtime`); agents without a row use `DEFAULT_PROVIDER`/`DEFAULT_MODEL` (default
 `claude`/`haiku` → Bedrock). The responder routes by provider: GPT → OpenAI SDK, Claude → the anthropic
-SDK's `AnthropicBedrock` (Claude aliases `haiku`/`sonnet` → Bedrock IDs via `BEDROCK_HAIKU/SONNET`,
-override for your region). The backend auto-loads `company/.env.local` into its env. No key /
+SDK's `AnthropicBedrock`. **Bedrock offers 5 models** (verified ACTIVE on account 203918858918
+via `list-inference-profiles`): `haiku`→Claude Haiku 4.5, `sonnet`→Sonnet 4.5, `sonnet-5`→Sonnet 5,
+`opus`→**Opus 4.8**, `fable`→Fable 5 — the account also has Opus 4.7/4.6/4.5 & Sonnet 4.6 available
+if wanted. Aliases → cross-region inference-profile IDs in `BEDROCK_IDS` (env `BEDROCK_HAIKU/SONNET/
+SONNET5/OPUS/FABLE` override); each has a `model_pricing` row so cost meters correctly (Opus verified
+$5/$25). The Providers dropdown reads these live from `/api/providers`. The backend auto-loads `company/.env.local` into its env. No key /
 model error → a short honest fallback message. **Verified live (both):** `gpt-4o-mini` and **Bedrock
 Claude Haiku 4.5** both returned real, in-character replies through `/api/chat/send`. Bedrock gotcha:
 newer Claude is only reachable via a **cross-region inference profile** (`global.`/`apac.` prefix),
@@ -504,7 +564,15 @@ not the raw model id — raw id → `invalid model identifier`; and the region m
 config: account `203918858918`, `ap-southeast-1`, `BEDROCK_HAIKU=global.anthropic.claude-haiku-4-5-20251001-v1:0`.
 `requirements.txt` adds `openai` + `boto3` (+ `anthropic`). Mention word-boundary
 resolution (`resolveMention`) tested; the Providers page is now live (fetch/save via the API),
-replacing the old runtime-catalog snippet page.
+replacing the old runtime-catalog snippet page. The per-agent table is **sorted A→Z by name**, has
+a **search box** (name/division/slug) and **bulk apply**: row checkboxes + "chọn tất cả (đang lọc)"
++ a per-division quick-select → set one provider+model for many agents via `POST
+/api/agent-runtime/bulk` (`{slugs, provider, model}`, one upsert, only hired slugs written,
+model validated against the provider — verified 3 updated + invalid slug ignored + bad model 400).
+A **token-price column** (`Giá /1M in/out`) shows each agent's current model price, resolved by
+`/api/providers` through the metering pricing key (Claude alias→`_METER_MODEL`→`model_pricing`,
+GPT id as-is); GPT pricing rows were added (gpt-4o-mini $0.15/$0.60, gpt-4o $2.50/$10) so GPT cost
+also meters, not just displays. Reacts to model changes; unpriced → "—".
 
 **Lifecycle risk:** the container belongs to the `ocb_ai_assistant` compose stack. A
 `docker compose down -v` there destroys `doom_agents` too. Flag this before real data lands.

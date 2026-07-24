@@ -1,6 +1,23 @@
+import { useEffect, useState } from 'react'
 import type { Agent, Division } from '../types'
 import { Section, drawerStyles as s } from './Drawer'
 import { useCopy } from '../lib/useCopy'
+import { apiUrl } from '../lib/api'
+
+interface Learning {
+  id: number
+  kind: 'skill' | 'knowledge' | 'lesson' | 'correction'
+  source: 'self' | 'experience' | 'owner'
+  content: string
+  taskId?: string
+  createdAt: string
+}
+const KIND_VI: Record<string, string> = {
+  skill: 'Kỹ năng', knowledge: 'Kiến thức', lesson: 'Bài học', correction: 'Chỉnh sửa',
+}
+const SRC_VI: Record<string, string> = {
+  self: 'tự đúc kết', experience: 'từ công việc', owner: 'CEO/CTO nhắc',
+}
 
 export function AgentDetail({ agent }: { agent: Agent }) {
   return (
@@ -8,6 +25,8 @@ export function AgentDetail({ agent }: { agent: Agent }) {
       <Section label="Mô tả vai trò">
         <div className={s.text}>{agent.description}</div>
       </Section>
+
+      {agent.hired && <LearningsSection slug={agent.slug} />}
 
       <Section label="Biên chế">
         {agent.hired ? (
@@ -80,6 +99,41 @@ export function AgentDetail({ agent }: { agent: Agent }) {
         </dl>
       </Section>
     </>
+  )
+}
+
+/** What the agent has taught ITSELF — live from company.agent_learnings. Only the
+ * agent can write its own learnings (record_learning, server-side identity); this
+ * is the read-only owner view. Empty until the agent actually learns something. */
+function LearningsSection({ slug }: { slug: string }) {
+  const [items, setItems] = useState<Learning[] | null>(null)
+  useEffect(() => {
+    let alive = true
+    fetch(apiUrl(`/api/agent-learnings/${slug}`))
+      .then((r) => (r.ok ? r.json() : []))
+      .then((d) => alive && setItems(Array.isArray(d) ? (d as Learning[]) : []))
+      .catch(() => alive && setItems([]))
+    return () => {
+      alive = false
+    }
+  }, [slug])
+
+  if (!items || items.length === 0) return null // hide when nothing learned yet
+  return (
+    <Section label={`🎓 Đã học & tự điều chỉnh (${items.length})`}>
+      <ul className={s.learnList}>
+        {items.map((l) => (
+          <li key={l.id} className={s.learnItem}>
+            <div className={s.learnTop}>
+              <span className={`${s.learnKind} ${s[`kind_${l.kind}`] ?? ''}`}>{KIND_VI[l.kind] ?? l.kind}</span>
+              <span className={s.learnSrc}>· {SRC_VI[l.source] ?? l.source}</span>
+              {l.taskId && <span className={s.learnTask}>{l.taskId}</span>}
+            </div>
+            <div className={s.learnText}>{l.content}</div>
+          </li>
+        ))}
+      </ul>
+    </Section>
   )
 }
 

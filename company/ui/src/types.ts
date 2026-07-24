@@ -235,6 +235,33 @@ export interface Workspace {
   messages: Message[]
 }
 
+// ---- Documents (company knowledge base, from company.documents / doc_folders) ----
+
+export interface DocFolder {
+  path: string
+  description?: string
+  createdBy?: string
+}
+
+export type DocFormat = 'markdown' | 'mermaid' | 'ppt' | 'text' | 'json' | 'code' | 'csv' | 'html'
+
+export interface DocFile {
+  id: number
+  folder: string
+  name: string
+  format: DocFormat
+  content: string
+  author?: string
+  engagementId?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface DocsData {
+  folders: DocFolder[]
+  files: DocFile[]
+}
+
 // ---- Monitor (from company.usage_events × company.model_pricing) ----
 
 export interface ModelPrice {

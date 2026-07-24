@@ -6,11 +6,17 @@ import { apiUrl } from '../lib/api'
 import s from './ProvidersPage.module.css'
 import p from '../components/Panel.module.css'
 
+interface ModelInfo {
+  id: string
+  label: string
+  inUsd?: number | null
+  outUsd?: number | null
+}
 interface ProviderInfo {
   id: string
   label: string
   configured: boolean
-  models: { id: string; label: string }[]
+  models: ModelInfo[]
 }
 interface AgentCfg {
   slug: string
@@ -31,6 +37,11 @@ const PROV_URL = apiUrl('/api/providers')
 export function ProvidersPage(_props: { roster: AgentRoster }) {
   const [data, setData] = useState<ProvidersData | null>(null)
   const [online, setOnline] = useState<boolean | null>(null)
+  const [query, setQuery] = useState('')
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [bulkProvider, setBulkProvider] = useState('')
+  const [bulkModel, setBulkModel] = useState('')
+  const [applying, setApplying] = useState(false)
 
   useEffect(() => {
     fetch(PROV_URL)
@@ -39,11 +50,30 @@ export function ProvidersPage(_props: { roster: AgentRoster }) {
         if (!d) return setOnline(false)
         setData(d as ProvidersData)
         setOnline(true)
+        setBulkProvider(d.default.provider)
+        setBulkModel(d.default.model)
       })
       .catch(() => setOnline(false))
   }, [])
 
   const byId = useMemo(() => new Map((data?.providers ?? []).map((x) => [x.id, x])), [data])
+
+  // Agents sorted A→Z by name; then filtered by the search box (name/division/slug).
+  const sorted = useMemo(
+    () => [...(data?.agents ?? [])].sort((a, b) => a.name.localeCompare(b.name, 'vi')),
+    [data],
+  )
+  const shown = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return sorted
+    return sorted.filter(
+      (a) => a.name.toLowerCase().includes(q) || a.division.toLowerCase().includes(q) || a.slug.includes(q),
+    )
+  }, [sorted, query])
+  const divisions = useMemo(
+    () => [...new Set((data?.agents ?? []).map((a) => a.division))].sort(),
+    [data],
+  )
 
   async function save(slug: string, provider: string, model: string) {
     setData((d) =>
@@ -59,6 +89,38 @@ export function ProvidersPage(_props: { roster: AgentRoster }) {
       /* backend offline — optimistic value reconciles on reload */
     }
   }
+
+  async function applyBulk() {
+    const slugs = [...selected]
+    if (slugs.length === 0 || !bulkProvider || !bulkModel || applying) return
+    setApplying(true)
+    // optimistic
+    setData((d) =>
+      d
+        ? { ...d, agents: d.agents.map((a) => (selected.has(a.slug) ? { ...a, provider: bulkProvider, model: bulkModel } : a)) }
+        : d,
+    )
+    try {
+      await fetch(apiUrl('/api/agent-runtime/bulk'), {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ slugs, provider: bulkProvider, model: bulkModel }),
+      })
+      setSelected(new Set())
+    } catch {
+      /* offline — optimistic reconciles on reload */
+    } finally {
+      setApplying(false)
+    }
+  }
+
+  const toggle = (slug: string) =>
+    setSelected((prev) => {
+      const n = new Set(prev)
+      n.has(slug) ? n.delete(slug) : n.add(slug)
+      return n
+    })
+  const allShownSelected = shown.length > 0 && shown.every((a) => selected.has(a.slug))
 
   if (online === false) {
     return (
@@ -115,29 +177,112 @@ export function ProvidersPage(_props: { roster: AgentRoster }) {
       <div className={p.panel}>
         <div className={p.head}>
           <h2 className={p.title}>
-            Model cho từng agent <span className={p.hint}>· agent trả lời chat bằng provider/model này</span>
+            Model cho từng agent <span className={p.hint}>· {shown.length}/{data.agents.length} agent</span>
           </h2>
+          <input
+            className={s.search}
+            placeholder="🔎 Tìm agent theo tên / phòng ban…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
         </div>
+
+        {/* Bulk apply: chọn tất cả (đang lọc) / theo phòng ban / từng dòng → áp 1 provider+model */}
+        <div className={s.bulkBar}>
+          <label className={s.bulkChk}>
+            <input
+              type="checkbox"
+              checked={allShownSelected}
+              onChange={(e) =>
+                setSelected((prev) => {
+                  const n = new Set(prev)
+                  shown.forEach((a) => (e.target.checked ? n.add(a.slug) : n.delete(a.slug)))
+                  return n
+                })
+              }
+            />
+            Chọn tất cả ({shown.length})
+          </label>
+          <select
+            className={s.bulkDiv}
+            value=""
+            onChange={(e) => {
+              const div = e.target.value
+              if (!div) return
+              setSelected((prev) => {
+                const n = new Set(prev)
+                sorted.filter((a) => a.division === div).forEach((a) => n.add(a.slug))
+                return n
+              })
+            }}
+          >
+            <option value="">+ Chọn theo phòng ban…</option>
+            {divisions.map((d) => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
+          {selected.size > 0 && (
+            <button className={s.clearSel} onClick={() => setSelected(new Set())}>
+              Bỏ chọn ({selected.size})
+            </button>
+          )}
+
+          <div className={s.bulkApply}>
+            <span className={s.bulkLabel}>Đặt cho {selected.size} agent:</span>
+            <select
+              className={s.select}
+              value={bulkProvider}
+              onChange={(e) => {
+                const np = e.target.value
+                setBulkProvider(np)
+                setBulkModel(byId.get(np)?.models[0]?.id ?? '')
+              }}
+            >
+              {data.providers.map((pr) => (
+                <option key={pr.id} value={pr.id}>{pr.label}{pr.configured ? '' : ' (thiếu key)'}</option>
+              ))}
+            </select>
+            <select className={s.select} value={bulkModel} onChange={(e) => setBulkModel(e.target.value)}>
+              {(byId.get(bulkProvider)?.models ?? []).map((m) => (
+                <option key={m.id} value={m.id}>{m.label}</option>
+              ))}
+            </select>
+            <button
+              className={s.applyBtn}
+              onClick={applyBulk}
+              disabled={selected.size === 0 || applying}
+            >
+              {applying ? 'Đang áp…' : 'Áp dụng'}
+            </button>
+          </div>
+        </div>
+
         <div className={s.tableWrap}>
           <table className={s.table}>
             <thead>
               <tr>
+                <th className={s.chkCol}></th>
                 <th>Agent</th>
                 <th>Phòng ban</th>
                 <th>Provider</th>
                 <th>Model</th>
+                <th className={s.priceCol}>Giá /1M (in&nbsp;/&nbsp;out)</th>
               </tr>
             </thead>
             <tbody>
-              {data.agents.map((a) => {
+              {shown.map((a) => {
                 const prov = a.provider ?? data.default.provider
                 const pi = byId.get(prov)
                 const model =
                   a.model ?? (prov === data.default.provider ? data.default.model : pi?.models[0]?.id ?? '')
+                const mi = pi?.models.find((m) => m.id === model)
                 const isCustom = Boolean(a.provider)
                 const who = agentDisplay(a.slug)
                 return (
-                  <tr key={a.slug}>
+                  <tr key={a.slug} className={selected.has(a.slug) ? s.rowSel : undefined}>
+                    <td className={s.chkCol}>
+                      <input type="checkbox" checked={selected.has(a.slug)} onChange={() => toggle(a.slug)} />
+                    </td>
                     <td>
                       <div className={s.who}>
                         <span className={s.avatar} style={{ background: `${who.color}22` }}>{who.emoji}</span>
@@ -177,6 +322,17 @@ export function ProvidersPage(_props: { roster: AgentRoster }) {
                         </select>
                         {!isCustom && <span className={s.defaultTag}>mặc định</span>}
                       </div>
+                    </td>
+                    <td className={s.priceCol}>
+                      {mi && mi.inUsd != null ? (
+                        <span className={s.price}>
+                          <span className={s.priceIn}>${mi.inUsd}</span>
+                          <span className={s.priceSep}>/</span>
+                          <span className={s.priceOut}>${mi.outUsd}</span>
+                        </span>
+                      ) : (
+                        <span className={s.priceNa}>—</span>
+                      )}
                     </td>
                   </tr>
                 )

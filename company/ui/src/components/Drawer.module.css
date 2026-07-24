@@ -273,3 +273,51 @@
   text-align: right;
   line-height: 1.45;
 }
+
+/* ---- agent self-learning list (AgentDetail LearningsSection) ---- */
+.learnList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.learnItem {
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 9px 11px;
+  background: var(--bg);
+}
+.learnTop {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-size: 11px;
+}
+.learnKind {
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  border-radius: 5px;
+  padding: 2px 7px;
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+.kind_correction { background: var(--amber-soft); color: #c77c12; }
+.kind_skill { background: var(--green-soft); color: #149467; }
+.kind_knowledge { background: var(--primary-soft); color: var(--primary); }
+.kind_lesson { background: var(--bg); color: #6e7590; }
+.learnSrc {
+  color: var(--muted);
+}
+.learnTask {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--primary);
+}
+.learnText {
+  font-size: 12.5px;
+  color: #3a4162;
+  line-height: 1.5;
+}

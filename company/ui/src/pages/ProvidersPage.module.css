@@ -222,3 +222,99 @@
   border-radius: 6px;
   padding: 2px 7px;
 }
+
+/* ---- search + bulk apply toolbar ---- */
+.search {
+  height: 34px;
+  min-width: 260px;
+  margin-left: auto; /* push to the right of the panel header */
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 0 12px;
+  font-size: 13px;
+  background: #fff;
+  outline: none;
+}
+.search:focus { border-color: var(--primary); }
+
+.bulkBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg);
+}
+.bulkChk {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #3a4162;
+  cursor: pointer;
+}
+.bulkDiv {
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 8px;
+  font-size: 12.5px;
+  background: #fff;
+  color: #5e6584;
+  text-transform: capitalize;
+}
+.clearSel {
+  font-size: 12px;
+  color: var(--primary);
+  font-weight: 600;
+  padding: 4px 6px;
+}
+.bulkApply {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.bulkLabel {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.applyBtn {
+  height: 34px;
+  padding: 0 16px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--primary);
+  color: #fff;
+}
+.applyBtn:disabled { opacity: 0.45; cursor: default; }
+.applyBtn:hover:not(:disabled) { opacity: 0.9; }
+
+/* checkbox column + selected row */
+.chkCol {
+  width: 34px;
+  padding-left: 24px !important;
+  padding-right: 0 !important;
+}
+.rowSel { background: var(--primary-soft); }
+
+/* ---- token price column ---- */
+.priceCol {
+  white-space: nowrap;
+  text-align: center;
+}
+thead .priceCol {
+  font-size: 11.5px;
+}
+.price {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.priceIn { color: #4e5ae8; }
+.priceOut { color: #d93463; }
+.priceSep { color: var(--muted); margin: 0 3px; }
+.priceNa { color: var(--muted); }

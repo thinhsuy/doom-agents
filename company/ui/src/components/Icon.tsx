@@ -23,6 +23,7 @@ export type IconName =
   | 'activity'
   | 'server'
   | 'coins'
+  | 'file'
 
 const PATHS: Record<IconName, React.ReactNode> = {
   users: (
@@ -105,6 +106,12 @@ const PATHS: Record<IconName, React.ReactNode> = {
     </>
   ),
   activity: <path d="M22 12h-4l-3 9L9 3l-3 9H2" />,
+  file: (
+    <>
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+      <path d="M14 3v5h5M9 13h6M9 17h6" />
+    </>
+  ),
   server: (
     <>
       <rect x="2" y="3" width="20" height="8" rx="2" />

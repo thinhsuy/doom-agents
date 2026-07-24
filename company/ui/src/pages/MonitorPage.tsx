@@ -1,5 +1,6 @@
 import type { Monitor } from '../types'
 import { StatGrid, type Stat } from '../components/StatCard'
+import { BudgetControls } from '../components/BudgetControls'
 import { Icon } from '../components/Icon'
 import { agentDisplay } from '../lib/agents'
 import { fmtInt, fmtTokens, fmtUsd } from '../lib/format'
@@ -23,6 +24,8 @@ export function MonitorPage({ monitor }: { monitor: Monitor }) {
 
   return (
     <>
+      <BudgetControls />
+
       {monitor.sample && (
         <div className={s.notice}>
           <Icon name="info" size={17} strokeWidth={2} />

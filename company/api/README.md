@@ -84,6 +84,46 @@ trả **33** đúng breakdown (cả Bedrock Haiku 4.5 lẫn gpt-4o-mini).
   Xoá nhóm → task giữ lại với origin NULL (không mất lịch sử). Verified: task tạo trong
   `ch-test-flow` → báo cáo về ch-test-flow bởi PM, `ch-leadership` = 0 tin.
 
+## Phanh khẩn cấp — trần chi phí + dừng + timeout (runtime, không cần restart)
+
+Cấu hình sống trong `company.office_config` (đổi qua API, hiệu lực ngay):
+- **Trần chi phí + ngưỡng cảnh báo** (`budget` = `{ceilingUsd,warnUsd}`, mặc định env `MAX_DAILY_USD=5`):
+  `_refresh_budget()` chạy mỗi tick worker, cộng `usage_costed` hôm nay; **cảnh báo** ở ngưỡng,
+  **tự dừng (latch)** khi chạm trần — chỉ resume sạch khi owner bấm Tiếp tục VÀ spend đã dưới trần.
+- **Dừng khẩn cấp thủ công** (`worker_paused`, `POST /api/worker/pause|resume`). Cả 2 phanh gate
+  **cả worker lẫn mọi chat reply** (`_llm_reply` trả "⛔ Tạm dừng", không gọi LLM).
+- **Timeout mỗi model** (`model_timeouts`, đặt `timeout=` trên mỗi call OpenAI/Bedrock) — call
+  treo sẽ bị cắt. `GET/POST /api/model-timeouts`.
+- **Triage rẻ cho fan-out**: tin không tag trong nhóm → `_should_answer` (prompt ngắn, không tool,
+  ~8 token out) chọn ai có việc, chỉ người đó full reply → rẻ hơn ~6–13× mỗi agent không tham gia.
+- UI: card **Phanh chi phí** ở tab Monitor (`BudgetControls`) — thanh spend/ngưỡng/trần, sửa hạn mức,
+  nút 🛑 Dừng/▶ Tiếp tục, ô timeout mỗi model. `GET/POST /api/budget`.
+
+## Tự học — agent tự điều chỉnh skill/knowledge (012_agent_learnings.sql)
+
+- Mọi agent có tool `record_learning` — **self-scoped tuyệt đối**: tool KHÔNG có tham số agent,
+  actor lấy từ context, nên agent chỉ ghi được learning của CHÍNH MÌNH (không sửa được agent khác).
+  `company.agent_learnings` (kind skill|knowledge|lesson|correction, source self|experience|owner).
+- Learnings gần nhất được **inject vào system prompt** (`_learnings_block`) ở chat + bước làm việc
+  của worker → hành vi thực sự thay đổi theo thời gian.
+- 2 nguồn: (1) **deterministic** — task bị QA trả lại → assignee tự ghi feedback thành correction
+  (luôn chạy, không phụ thuộc LLM); (2) chat khi CEO/CTO nhắc/sửa (source=owner) — phụ thuộc model.
+- Owner xem ở drawer Nhân sự (`🎓 Đã học`, live `/api/agent-learnings/{slug}`). Verified: learning
+  của 2 agent tách biệt, non-agent bị từ chối.
+
+## Documents — kho tài liệu + "document-first, implement-second" (011_documents.sql)
+
+- **MỌI agent** (cả staff) có 4 tool: `list_docs`, `read_doc`, `create_folder`, `write_doc`
+  (`_DOC_TOOL_NAMES`, mở cho tất cả trong `_exec_tool` — chỉ bước `__reader__` của worker là view_db only).
+  `write_doc` create-or-update theo (folder,name), tự tạo folder; format mặc định `markdown`.
+- **Rule** trong base system prompt: trước khi làm việc thật → viết tài liệu để agent khác đọc & follow.
+- **Cơ chế TIN CẬY = worker**: staff nộp deliverable → backend tự lưu thành
+  `<engagement>/deliverables/<taskId>.md` (gọi `_t_write_doc` bằng Python, KHÔNG qua LLM). Verified:
+  T-950 → `ENG-OPS/deliverables/T-950.md` xuất hiện đúng lúc chuyển in_qa, author = assignee.
+- Chat-driven `write_doc` (agent tự viết doc khi được nhờ trong chat) CÓ nhưng **phụ thuộc model**:
+  Haiku 4.5 hay "hứa" thay vì gọi tool → không tin cậy trên model rẻ; đường worker mới là cái chắc chắn.
+- FE: tab **Documents** (`/api/docs`, poll 5s), rail folder→file + viewer markdown/raw. Console chỉ đọc.
+
 ## Vòng giao việc NEXUS qua chat (@Ban lãnh đạo → task → staff làm → báo cáo)
 
 - **`@Ban lãnh đạo` / `@all`** trong Team Chat → backend fan-out cho 5 lead
@@ -145,7 +185,9 @@ agent chưa chỉnh dùng mặc định công ty `DEFAULT_PROVIDER`/`DEFAULT_MOD
 
 - **GPT (OpenAI)** — key `OPENAI_API_KEY`. Model: `gpt-4o-mini`, `gpt-4o`.
 - **Claude (AWS Bedrock)** — creds `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`, region `BEDROCK_REGION`
-  (tách khỏi `AWS_REGION` của S3). Model alias `haiku`/`sonnet` → Bedrock ID (`BEDROCK_HAIKU`/`BEDROCK_SONNET`).
+  (tách khỏi `AWS_REGION` của S3). **5 model** (ACTIVE trên account): `haiku` Haiku 4.5, `sonnet` Sonnet 4.5,
+  `sonnet-5` Sonnet 5, `opus` **Opus 4.8**, `fable` Fable 5 (account còn Opus 4.7/4.6/4.5, Sonnet 4.6 nếu cần).
+  Alias → inference-profile ID trong `BEDROCK_IDS` (env `BEDROCK_HAIKU/SONNET/SONNET5/OPUS/FABLE`).
   Claude đời mới trên Bedrock **chỉ gọi qua cross-region inference profile** (prefix `global.`/`apac.`),
   KHÔNG dùng raw model id (raw id → `invalid model identifier`). Tra profile:
   `aws bedrock list-inference-profiles --region <r>`.

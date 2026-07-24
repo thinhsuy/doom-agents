@@ -13,6 +13,7 @@ import { AgentsPage } from './pages/AgentsPage'
 import { DecisionsPage } from './pages/DecisionsPage'
 import { TasksPage } from './pages/TasksPage'
 import { OfficePage } from './pages/OfficePage'
+import { DocumentsPage } from './pages/DocumentsPage'
 import { ProvidersPage } from './pages/ProvidersPage'
 import { MonitorPage } from './pages/MonitorPage'
 import s from './App.module.css'
@@ -146,6 +147,8 @@ export function App() {
             <Route path="/workspace/office" element={<OfficePage workspace={workspace} />} />
             <Route path="/workspace/tasks" element={<TasksPage workspace={workspace} />} />
             <Route path="/workspace/tasks/:id" element={<TasksPage workspace={workspace} />} />
+            <Route path="/workspace/docs" element={<DocumentsPage />} />
+            <Route path="/workspace/docs/:id" element={<DocumentsPage />} />
             <Route path="/providers" element={<ProvidersPage roster={roster} />} />
             <Route path="/monitor" element={<MonitorPage monitor={monitor} />} />
             <Route path="*" element={<Navigate to="/agents" replace />} />

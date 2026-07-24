@@ -72,6 +72,10 @@ export function Sidebar({ pendingCount, taskCount, messageCount }: Props) {
           Tasks
           {taskCount > 0 && <span className={`${s.badge} ${s.badgeSoft}`}>{taskCount}</span>}
         </NavLink>
+        <NavLink to="/workspace/docs" className={linkClass}>
+          <Icon name="file" />
+          Documents
+        </NavLink>
       </nav>
 
       <div className={s.navLabel}>SETTING &amp; MONITOR</div>
