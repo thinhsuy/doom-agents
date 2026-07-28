@@ -1,5 +1,9 @@
 fastapi>=0.115
 uvicorn[standard]>=0.30
+# DB — psycopg over TCP is used when PGCONTAINER is unset (cloud / RDS). Locally, db.py
+# talks to the container via `docker exec psql` and never imports these.
+psycopg[binary]>=3.2
+psycopg-pool>=3.2
 # Agent replies (optional, per configured provider):
 openai>=1.40             # GPT via OPENAI_API_KEY
 anthropic>=0.40          # Claude via AWS Bedrock (AnthropicBedrock)

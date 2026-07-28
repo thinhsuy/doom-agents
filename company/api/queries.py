@@ -55,7 +55,7 @@ SELECT json_build_object(
   'messages', (SELECT coalesce(json_agg(m ORDER BY mid), '[]'::json) FROM (
     SELECT id AS mid, json_strip_nulls(json_build_object(
       'id', id, 'channelId', channel_id, 'engagementId', engagement_id, 'taskId', task_id,
-      'fromAgent', from_agent, 'toAgent', to_agent, 'kind', kind, 'body', body,
+      'fromAgent', from_agent, 'toAgent', to_agent, 'ownerActor', owner_actor, 'kind', kind, 'body', body,
       'reactions', (SELECT json_agg(json_build_object('emoji', emoji, 'agents', agents) ORDER BY emoji)
           FROM (SELECT emoji, json_agg(agent ORDER BY agent) AS agents
                 FROM company.message_reactions r WHERE r.message_id = messages.id
@@ -74,6 +74,11 @@ SELECT json_build_object(
       'inputPerMtok', input_per_mtok, 'outputPerMtok', output_per_mtok,
       'note', note, 'source', source) ORDER BY input_per_mtok), '[]'::json)
     FROM company.model_pricing),
+  'infra', (SELECT coalesce(json_agg(json_build_object(
+      'key', key, 'service', service, 'spec', spec,
+      'monthlyUsd', est_monthly_usd::float8, 'note', note) ORDER BY sort, key), '[]'::json)
+    FROM company.infra_pricing),
+  'infraMonthlyUsd', (SELECT coalesce(sum(est_monthly_usd), 0)::float8 FROM company.infra_pricing),
   'agents', (SELECT coalesce(json_agg(a ORDER BY cost DESC NULLS LAST), '[]'::json) FROM (
     SELECT sum(cost_usd) AS cost, json_build_object(
       'slug', u.agent, 'name', coalesce(ag.name, u.agent),
@@ -115,7 +120,7 @@ SELECT json_build_object(
   'messages', (SELECT coalesce(json_agg(m ORDER BY (m->>'id')::bigint), '[]') FROM (
     SELECT json_strip_nulls(json_build_object(
       'id', id, 'channelId', channel_id, 'engagementId', engagement_id, 'taskId', task_id,
-      'fromAgent', from_agent, 'toAgent', to_agent, 'kind', kind, 'body', body,
+      'fromAgent', from_agent, 'toAgent', to_agent, 'ownerActor', owner_actor, 'kind', kind, 'body', body,
       'reactions', (SELECT json_agg(json_build_object('emoji', emoji, 'agents', agents) ORDER BY emoji)
           FROM (SELECT emoji, json_agg(agent ORDER BY agent) AS agents
                 FROM company.message_reactions r WHERE r.message_id = messages.id GROUP BY emoji) rr),
