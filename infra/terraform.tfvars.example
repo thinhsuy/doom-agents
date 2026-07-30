@@ -1,0 +1,22 @@
+# Copy to terraform.tfvars and adjust. Defaults are already minimal/cheap — you usually
+# only need to set image_tag after you build & push, and maybe the region.
+
+project = "agency-agents"
+env     = "prod"
+region  = "ap-southeast-1" # matches the app's Bedrock region
+
+# After building & pushing the image, set this to the pushed tag (or keep "latest").
+image_tag = "latest"
+
+# Set to false if the account ALREADY has a GitHub Actions OIDC provider (only one per
+# account is allowed). The deploy role then reuses the existing provider. Leave unset/true
+# on a fresh account.
+# create_oidc_provider = false
+
+# --- Optional overrides ---
+# task_cpu             = 256          # 0.25 vCPU (min)
+# task_memory          = 512          # 0.5 GB (min)
+# desired_count        = 1
+# postgres_version     = "17.9"       # ap-southeast-1: 17.5–17.10 (verify: aws rds describe-db-engine-versions --engine postgres --region <r>)
+# db_instance_class    = "db.t4g.micro"
+# acm_certificate_arn  = ""           # set to an ACM cert ARN to enable HTTPS on the ALB

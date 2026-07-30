@@ -7,6 +7,7 @@ const STATUS: Record<DecisionStatus, { cls: string; label: string }> = {
   pending: { cls: 'pillPending', label: 'Chờ quyết định' },
   decided: { cls: 'pillDecided', label: 'Đã quyết' },
   deferred: { cls: 'pillDeferred', label: 'Hoãn' },
+  cancelled: { cls: 'pillCancelled', label: 'Đã huỷ' },
 }
 
 const URGENCY: Record<DecisionUrgency, { cls: string; label: string }> = {
@@ -98,19 +99,6 @@ export function DecisionTable({ decisions, selectedId, onSelect, query }: Props)
           </table>
         </div>
       )}
-    </div>
-  )
-}
-
-export function ReadOnlyNotice({ note, source }: { note: string; source: string }) {
-  return (
-    <div className={s.notice}>
-      <Icon name="info" size={17} strokeWidth={2} />
-      <div>
-        <b>Nguồn dữ liệu: <code>{source}</code>.</b> {note} Console là trang tĩnh nên hiển thị
-        snapshot đã xuất lúc build — nó <b>đọc</b> từ DB nhưng chưa <b>ghi</b> trực tiếp. Nút “Sao
-        chép decision record” tạo sẵn bản ghi để dán vào DB.
-      </div>
     </div>
   )
 }

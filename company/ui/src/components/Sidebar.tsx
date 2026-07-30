@@ -1,32 +1,19 @@
 import { NavLink } from 'react-router-dom'
 import { Icon } from './Icon'
-import { useCopy } from '../lib/useCopy'
+import { useAuth } from '../lib/auth'
 import s from './Sidebar.module.css'
+
+const ROLE_EMOJI: Record<string, string> = { CEO: '👑', CTO: '🛠️', COO: '⚙️', CIO: '🗄️' }
 
 interface Props {
   pendingCount: number
+  recruitCount: number
   taskCount: number
   messageCount: number
 }
 
-/** Docs aren't routes — the console can't open a repo file, so it copies the path. */
-const DOCS = [
-  { label: 'Kế hoạch', path: 'company/IMPLEMENTATION-PLAN.md', icon: 'info' },
-  { label: 'NEXUS', path: 'strategy/nexus-strategy.md', icon: 'settings' },
-] as const
-
-/** Own useCopy per button so feedback lands on the one that was clicked. */
-function DocButton({ label, path, icon }: { label: string; path: string; icon: 'info' | 'settings' }) {
-  const [state, copy] = useCopy()
-  return (
-    <button className={s.item} onClick={() => copy(path)} title={`Sao chép đường dẫn ${path}`}>
-      <Icon name={icon} />
-      {state === 'ok' ? 'Đã sao chép' : state === 'fail' ? 'Không sao chép được' : label}
-    </button>
-  )
-}
-
-export function Sidebar({ pendingCount, taskCount, messageCount }: Props) {
+export function Sidebar({ pendingCount, recruitCount, taskCount, messageCount }: Props) {
+  const { user, logout } = useAuth()
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     isActive ? `${s.item} ${s.active}` : s.item
 
@@ -49,14 +36,31 @@ export function Sidebar({ pendingCount, taskCount, messageCount }: Props) {
 
       <div className={s.navLabel}>MAIN MENU</div>
       <nav className={s.nav}>
-        <NavLink to="/agents" className={linkClass}>
-          <Icon name="users" />
-          Nhân sự
+        <NavLink to="/goals" className={linkClass}>
+          <Icon name="target" />
+          Mục tiêu
+        </NavLink>
+        <NavLink to="/investment" className={linkClass}>
+          <Icon name="trendingUp" />
+          Investment
         </NavLink>
         <NavLink to="/decisions" className={linkClass}>
           <Icon name="checkSquare" />
           Quyết định
           {pendingCount > 0 && <span className={s.badge}>{pendingCount}</span>}
+        </NavLink>
+      </nav>
+
+      <div className={s.navLabel}>AGENT RESOURCES</div>
+      <nav className={s.nav}>
+        <NavLink to="/agents" className={linkClass}>
+          <Icon name="users" />
+          Nhân sự
+        </NavLink>
+        <NavLink to="/recruitment" className={linkClass}>
+          <Icon name="userPlus" />
+          Tuyển dụng
+          {recruitCount > 0 && <span className={s.badge} title="ứng viên chờ duyệt">{recruitCount}</span>}
         </NavLink>
       </nav>
 
@@ -70,7 +74,7 @@ export function Sidebar({ pendingCount, taskCount, messageCount }: Props) {
         <NavLink to="/workspace/tasks" className={linkClass}>
           <Icon name="kanban" />
           Tasks
-          {taskCount > 0 && <span className={`${s.badge} ${s.badgeSoft}`}>{taskCount}</span>}
+          {taskCount > 0 && <span className={s.badge} title="task đang escalated — cần CEO/CTO xử lý">{taskCount}</span>}
         </NavLink>
         <NavLink to="/workspace/docs" className={linkClass}>
           <Icon name="file" />
@@ -84,24 +88,30 @@ export function Sidebar({ pendingCount, taskCount, messageCount }: Props) {
           <Icon name="server" />
           Providers
         </NavLink>
+        <NavLink to="/access-tools" className={linkClass}>
+          <Icon name="key" />
+          Access Tools
+        </NavLink>
         <NavLink to="/monitor" className={linkClass}>
           <Icon name="activity" />
           Monitor
         </NavLink>
       </nav>
 
-      <div className={s.navLabel}>HELP &amp; SUPPORT</div>
-      <nav className={s.nav}>
-        {DOCS.map((d) => (
-          <DocButton key={d.path} label={d.label} path={d.path} icon={d.icon} />
-        ))}
-      </nav>
-
       <div className={s.spacer} />
+      {user && (
+        <div className={s.account}>
+          <div className={s.accountAvatar}>{ROLE_EMOJI[user.role] ?? '🧑‍💼'}</div>
+          <div className={s.accountInfo}>
+            <div className={s.accountName}>{user.displayName}</div>
+            <div className={s.accountRole}>Đang đăng nhập</div>
+          </div>
+        </div>
+      )}
       <nav className={s.nav}>
-        <button className={s.item}>
+        <button className={s.item} onClick={() => void logout()}>
           <Icon name="logout" />
-          Log Out
+          Đăng xuất
         </button>
       </nav>
     </aside>

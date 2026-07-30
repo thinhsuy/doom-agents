@@ -1,0 +1,11 @@
+# Terraform state (contains the generated DB password / secrets) — never commit.
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+crash.log
+crash.*.log
+
+# Real variable values.
+terraform.tfvars
+*.auto.tfvars

@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { AgentRoster } from '../types'
 import { StatGrid, type Stat } from '../components/StatCard'
+import { CurrencyControls } from '../components/CurrencyControls'
+import { useCurrency } from '../lib/currency'
 import { agentDisplay } from '../lib/agents'
 import { apiUrl } from '../lib/api'
 import s from './ProvidersPage.module.css'
@@ -24,17 +26,37 @@ interface AgentCfg {
   division: string
   provider: string | null
   model: string | null
+  permissions: string[] // effective permission keys (base ∪ lead ∪ granted)
+  basePermissions: string[]
+  grantedTools: string[] // direct per-tool grants (agent_tool_grants)
+}
+interface PermCatalogEntry {
+  key: string
+  label: string
+  description: string | null
+  tools: string[]
+  highRisk: boolean
+  builtin: boolean
+}
+interface ToolInfo {
+  name: string
+  description: string
+  access: string // lead | restricted | custom
 }
 interface ProvidersData {
   providers: ProviderInfo[]
   default: { provider: string; model: string }
   agents: AgentCfg[]
+  permissionCatalog: PermCatalogEntry[]
+  baseKeys: string[]
+  toolCatalog: ToolInfo[]
 }
 
 const PROV_URL = apiUrl('/api/providers')
 
 // roster kept for the prop signature; live data comes from the backend.
 export function ProvidersPage(_props: { roster: AgentRoster }) {
+  const { money } = useCurrency()
   const [data, setData] = useState<ProvidersData | null>(null)
   const [online, setOnline] = useState<boolean | null>(null)
   const [query, setQuery] = useState('')
@@ -42,7 +64,18 @@ export function ProvidersPage(_props: { roster: AgentRoster }) {
   const [bulkProvider, setBulkProvider] = useState('')
   const [bulkModel, setBulkModel] = useState('')
   const [applying, setApplying] = useState(false)
+  const [editPerms, setEditPerms] = useState<AgentCfg | null>(null)
+  const [divFilter, setDivFilter] = useState<Set<string>>(new Set())
 
+  const load = () =>
+    fetch(PROV_URL)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d) return setOnline(false)
+        setData(d as ProvidersData)
+        setOnline(true)
+      })
+      .catch(() => setOnline(false))
   useEffect(() => {
     fetch(PROV_URL)
       .then((r) => (r.ok ? r.json() : null))
@@ -57,6 +90,11 @@ export function ProvidersPage(_props: { roster: AgentRoster }) {
   }, [])
 
   const byId = useMemo(() => new Map((data?.providers ?? []).map((x) => [x.id, x])), [data])
+  const catMap = useMemo(
+    () => new Map((data?.permissionCatalog ?? []).map((c) => [c.key, c])),
+    [data],
+  )
+  const baseKeys = useMemo(() => new Set(data?.baseKeys ?? []), [data])
 
   // Agents sorted A→Z by name; then filtered by the search box (name/division/slug).
   const sorted = useMemo(
@@ -65,11 +103,14 @@ export function ProvidersPage(_props: { roster: AgentRoster }) {
   )
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return sorted
-    return sorted.filter(
-      (a) => a.name.toLowerCase().includes(q) || a.division.toLowerCase().includes(q) || a.slug.includes(q),
-    )
-  }, [sorted, query])
+    let list = sorted
+    if (divFilter.size) list = list.filter((a) => divFilter.has(a.division))
+    if (q)
+      list = list.filter(
+        (a) => a.name.toLowerCase().includes(q) || a.division.toLowerCase().includes(q) || a.slug.includes(q),
+      )
+    return list
+  }, [sorted, query, divFilter])
   const divisions = useMemo(
     () => [...new Set((data?.agents ?? []).map((a) => a.division))].sort(),
     [data],
@@ -114,6 +155,32 @@ export function ProvidersPage(_props: { roster: AgentRoster }) {
     }
   }
 
+  // Owner grants/revokes an agent's permission bundles + individual tools (base perms stay
+  // implicit). Optimistic: effective perms = base ∪ keys; grantedTools = the chosen tools.
+  async function savePerms(slug: string, keys: string[], tools: string[]) {
+    setData((d) =>
+      d
+        ? {
+            ...d,
+            agents: d.agents.map((a) =>
+              a.slug === slug
+                ? { ...a, permissions: Array.from(new Set([...a.basePermissions, ...keys])), grantedTools: tools }
+                : a,
+            ),
+          }
+        : d,
+    )
+    try {
+      await fetch(apiUrl(`/api/agents/${slug}/permissions`), {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ permissions: keys, tools }),
+      })
+    } catch {
+      /* offline — optimistic value reconciles on reload */
+    }
+  }
+
   const toggle = (slug: string) =>
     setSelected((prev) => {
       const n = new Set(prev)
@@ -149,30 +216,7 @@ export function ProvidersPage(_props: { roster: AgentRoster }) {
     <>
       <StatGrid stats={stats} />
 
-      <div className={s.providerCards}>
-        {data.providers.map((pr) => (
-          <div key={pr.id} className={s.providerCard}>
-            <div className={s.providerTop}>
-              <span className={s.providerName}>{pr.label}</span>
-              <span className={pr.configured ? s.ok : s.missing}>
-                {pr.configured ? '● đã cấu hình' : '○ thiếu key'}
-              </span>
-            </div>
-            <div className={s.providerModels}>
-              {pr.models.map((m) => (
-                <span key={m.id} className={s.modelChip}>{m.label}</span>
-              ))}
-            </div>
-            {!pr.configured && (
-              <div className={s.providerHint}>
-                {pr.id === 'gpt'
-                  ? 'Đặt OPENAI_API_KEY trong company/.env.local'
-                  : 'Đặt AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_REGION'}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
+      <CurrencyControls onProvidersChanged={load} />
 
       <div className={p.panel}>
         <div className={p.head}>
@@ -203,24 +247,7 @@ export function ProvidersPage(_props: { roster: AgentRoster }) {
             />
             Chọn tất cả ({shown.length})
           </label>
-          <select
-            className={s.bulkDiv}
-            value=""
-            onChange={(e) => {
-              const div = e.target.value
-              if (!div) return
-              setSelected((prev) => {
-                const n = new Set(prev)
-                sorted.filter((a) => a.division === div).forEach((a) => n.add(a.slug))
-                return n
-              })
-            }}
-          >
-            <option value="">+ Chọn theo phòng ban…</option>
-            {divisions.map((d) => (
-              <option key={d} value={d}>{d}</option>
-            ))}
-          </select>
+          <DivFilter divisions={divisions} selected={divFilter} onChange={setDivFilter} />
           {selected.size > 0 && (
             <button className={s.clearSel} onClick={() => setSelected(new Set())}>
               Bỏ chọn ({selected.size})
@@ -267,6 +294,7 @@ export function ProvidersPage(_props: { roster: AgentRoster }) {
                 <th>Provider</th>
                 <th>Model</th>
                 <th className={s.priceCol}>Giá /1M (in&nbsp;/&nbsp;out)</th>
+                <th className={s.accessCol}>Access Tools</th>
               </tr>
             </thead>
             <tbody>
@@ -326,13 +354,21 @@ export function ProvidersPage(_props: { roster: AgentRoster }) {
                     <td className={s.priceCol}>
                       {mi && mi.inUsd != null ? (
                         <span className={s.price}>
-                          <span className={s.priceIn}>${mi.inUsd}</span>
+                          <span className={s.priceIn}>{money(mi.inUsd, 'usd')}</span>
                           <span className={s.priceSep}>/</span>
-                          <span className={s.priceOut}>${mi.outUsd}</span>
+                          <span className={s.priceOut}>{money(mi.outUsd ?? 0, 'usd')}</span>
                         </span>
                       ) : (
                         <span className={s.priceNa}>—</span>
                       )}
+                    </td>
+                    <td
+                      className={`${s.accessCol} ${s.accessEditable}`}
+                      onClick={() => setEditPerms(a)}
+                      title="Bấm để cấp / thu quyền"
+                    >
+                      <AccessCell agent={a} catMap={catMap} baseKeys={baseKeys} />
+                      <span className={s.accessEdit}>✏️ sửa quyền</span>
                     </td>
                   </tr>
                 )
@@ -341,6 +377,221 @@ export function ProvidersPage(_props: { roster: AgentRoster }) {
           </table>
         </div>
       </div>
+
+      {editPerms && (
+        <AgentPermsEditor
+          agent={editPerms}
+          catalog={data.permissionCatalog}
+          toolCatalog={data.toolCatalog}
+          onClose={() => setEditPerms(null)}
+          onSave={(keys, tools) => {
+            savePerms(editPerms.slug, keys, tools)
+            setEditPerms(null)
+          }}
+        />
+      )}
     </>
+  )
+}
+
+/** Multi-select department FILTER (filters the table; does not tick checkboxes). Pick one or
+    more phòng ban; the table shows only those agents. Combine with the search box. */
+function DivFilter({
+  divisions,
+  selected,
+  onChange,
+}: {
+  divisions: string[]
+  selected: Set<string>
+  onChange: (next: Set<string>) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const h = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', h)
+    return () => document.removeEventListener('mousedown', h)
+  }, [open])
+  const toggle = (d: string) => {
+    const n = new Set(selected)
+    n.has(d) ? n.delete(d) : n.add(d)
+    onChange(n)
+  }
+  return (
+    <div className={s.divFilter} ref={ref}>
+      <button
+        className={selected.size ? `${s.divFilterBtn} ${s.divFilterOn}` : s.divFilterBtn}
+        onClick={() => setOpen((o) => !o)}
+      >
+        🏷 {selected.size ? `Lọc: ${selected.size} phòng ban` : 'Lọc theo phòng ban'} <span className={s.caret}>▾</span>
+      </button>
+      {open && (
+        <div className={s.divFilterPop}>
+          {divisions.map((d) => (
+            <label key={d} className={s.divFilterRow}>
+              <input type="checkbox" checked={selected.has(d)} onChange={() => toggle(d)} />
+              {d}
+            </label>
+          ))}
+          {selected.size > 0 && (
+            <button className={s.divFilterClear} onClick={() => onChange(new Set())}>
+              Bỏ lọc ({selected.size})
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** Owner grants/revokes a staff agent's permissions. Base perms (every agent has them) are
+    hidden; the rest of the catalog is checkboxes — checked = explicitly granted. */
+function AgentPermsEditor({
+  agent,
+  catalog,
+  toolCatalog,
+  onClose,
+  onSave,
+}: {
+  agent: AgentCfg
+  catalog: PermCatalogEntry[]
+  toolCatalog: ToolInfo[]
+  onClose: () => void
+  onSave: (keys: string[], tools: string[]) => void
+}) {
+  const baseSet = useMemo(() => new Set(agent.basePermissions), [agent])
+  const [checked, setChecked] = useState<Set<string>>(
+    () => new Set(agent.permissions.filter((k) => !baseSet.has(k))),
+  )
+  const [checkedTools, setCheckedTools] = useState<Set<string>>(() => new Set(agent.grantedTools))
+  // Tools already unlocked by a checked OR auto (base/lead) permission bundle — so the detail
+  // section doesn't ask to grant them again.
+  const coveredByPerm = useMemo(() => {
+    const set = new Set<string>()
+    for (const c of catalog) if (checked.has(c.key) || baseSet.has(c.key)) (c.tools || []).forEach((t) => set.add(t))
+    return set
+  }, [catalog, checked, baseSet])
+  const toggle = (k: string) =>
+    setChecked((prev) => {
+      const n = new Set(prev)
+      n.has(k) ? n.delete(k) : n.add(k)
+      return n
+    })
+  const toggleTool = (t: string) =>
+    setCheckedTools((prev) => {
+      const n = new Set(prev)
+      n.has(t) ? n.delete(t) : n.add(t)
+      return n
+    })
+  const who = agentDisplay(agent.slug)
+  return (
+    <div className={s.overlay} onClick={onClose}>
+      <div className={s.modal} onClick={(e) => e.stopPropagation()}>
+        <div className={s.modalHead}>
+          <span className={s.avatar} style={{ background: `${who.color}22` }}>{who.emoji}</span>
+          <span className={s.modalTitle}>Quyền của {agent.name}</span>
+          <button className={s.modalClose} onClick={onClose} aria-label="Đóng">✕</button>
+        </div>
+        <div className={s.modalHint}>
+          Tick để <b>cấp</b> / bỏ tick để <b>thu</b>. Nhóm <b>cơ bản/lead</b> (mọi agent — hoặc lead — tự động có)
+          hiện <b>mờ &amp; luôn bật</b>, không thu được; tick các nhóm còn lại để cấp/thu.
+        </div>
+        <div className={s.permList}>
+          <div className={s.permSection}>Nhóm quyền (mở khoá nhiều tool)</div>
+          {catalog.map((c) => {
+            const isAuto = baseSet.has(c.key) // base (mọi agent) or lead — always on for this agent
+            return (
+              <label key={c.key} className={s.permRow}>
+                <input
+                  type="checkbox"
+                  checked={isAuto || checked.has(c.key)}
+                  disabled={isAuto}
+                  onChange={() => toggle(c.key)}
+                />
+                <div className={s.permInfo}>
+                  <div className={s.permTop}>
+                    <span className={s.permLabel}>{c.label}</span>
+                    {c.highRisk && <span className={s.riskTag}>rủi ro cao</span>}
+                    {isAuto && <span className={s.permKey}>tự động · luôn bật</span>}
+                    <span className={s.permKey}>{c.key}</span>
+                  </div>
+                  {c.description && <div className={s.permDesc}>{c.description}</div>}
+                  {c.tools.length > 0 && <div className={s.permTools}>tool: {c.tools.join(', ')}</div>}
+                </div>
+              </label>
+            )
+          })}
+
+          <div className={s.permSection}>Cấp từng tool riêng lẻ (chi tiết)</div>
+          {toolCatalog.map((t) => {
+            const viaPerm = coveredByPerm.has(t.name)
+            return (
+              <label key={t.name} className={s.permRow}>
+                <input
+                  type="checkbox"
+                  checked={viaPerm || checkedTools.has(t.name)}
+                  disabled={viaPerm}
+                  onChange={() => toggleTool(t.name)}
+                />
+                <div className={s.permInfo}>
+                  <div className={s.permTop}>
+                    <span className={`${s.permLabel} ${s.mono}`}>{t.name}</span>
+                    {t.access === 'restricted' && <span className={s.riskTag}>hạn chế</span>}
+                    {t.access === 'custom' && <span className={s.permKey}>tuỳ chỉnh</span>}
+                    {viaPerm && <span className={s.permKey}>đã có qua nhóm quyền</span>}
+                  </div>
+                  {t.description && <div className={s.permDesc}>{t.description}</div>}
+                </div>
+              </label>
+            )
+          })}
+        </div>
+        <div className={s.modalFoot}>
+          <button className={s.cancel} onClick={onClose}>Huỷ</button>
+          <button className={s.saveBtn} onClick={() => onSave([...checked], [...checkedTools])}>Lưu quyền</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** The Access Tools cell: distinguishing perms (lead/granted) as chips + one muted chip
+    for the universal base perms. Labels/tools come from the catalog — nothing re-listed. */
+function AccessCell({
+  agent,
+  catMap,
+  baseKeys,
+}: {
+  agent: AgentCfg
+  catMap: Map<string, PermCatalogEntry>
+  baseKeys: Set<string>
+}) {
+  const special = agent.permissions.filter((k) => !baseKeys.has(k))
+  const base = agent.permissions.filter((k) => baseKeys.has(k))
+  const baseTip = base.map((k) => catMap.get(k)?.label ?? k).join(' · ')
+  return (
+    <div className={s.access}>
+      {special.map((k) => {
+        const c = catMap.get(k)
+        const tip = c?.tools.length ? `Tools: ${c.tools.join(', ')}` : 'Quyền ghi nhận (thực thi qua orchestrator)'
+        return (
+          <span
+            key={k}
+            className={c?.highRisk ? `${s.permChip} ${s.permHigh}` : s.permChip}
+            title={`${c?.label ?? k}${c?.description ? ' — ' + c.description : ''}\n${tip}`}
+          >
+            {c?.label ?? k}
+          </span>
+        )
+      })}
+      {base.length > 0 && (
+        <span className={`${s.permChip} ${s.permBase}`} title={`Mọi agent đều có: ${baseTip}`}>
+          cơ bản · {base.length}
+        </span>
+      )}
+    </div>
   )
 }

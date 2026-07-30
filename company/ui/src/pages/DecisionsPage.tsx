@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import type { DecisionQueue } from '../types'
 import { StatGrid, type Stat } from '../components/StatCard'
-import { DecisionTable, ReadOnlyNotice } from '../components/DecisionTable'
+import { DecisionTable } from '../components/DecisionTable'
 import { Drawer } from '../components/Drawer'
 import { DecisionDetail, DecisionDetailFooter } from '../components/DecisionDetail'
 
@@ -50,7 +50,6 @@ export function DecisionsPage({ queue, query }: Props) {
 
   return (
     <>
-      <ReadOnlyNotice note={queue.note} source={queue.source} />
       <StatGrid stats={stats} />
       <DecisionTable
         decisions={queue.decisions}

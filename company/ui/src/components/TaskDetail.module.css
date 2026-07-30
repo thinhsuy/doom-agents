@@ -238,3 +238,18 @@
 .commentMd th, .commentMd td { border: 1px solid var(--line); padding: 3px 7px; white-space: nowrap; }
 .commentMd blockquote { border-left: 3px solid var(--line); margin: 6px 0; padding: 2px 8px; color: var(--muted); }
 .commentMd hr { border: 0; border-top: 1px solid var(--line); margin: 8px 0; }
+
+/* CEO-only delete ticket button (danger) in the detail drawer footer. */
+.deleteBtn {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: #d93463;
+}
+.deleteBtn:hover:not(:disabled) {
+  border-color: #d93463;
+  background: #d934630f;
+}
+.deleteBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

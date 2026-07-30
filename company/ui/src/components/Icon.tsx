@@ -24,6 +24,10 @@ export type IconName =
   | 'server'
   | 'coins'
   | 'file'
+  | 'userPlus'
+  | 'target'
+  | 'trendingUp'
+  | 'key'
 
 const PATHS: Record<IconName, React.ReactNode> = {
   users: (
@@ -31,6 +35,13 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
       <circle cx="9" cy="7" r="4" />
       <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+    </>
+  ),
+  userPlus: (
+    <>
+      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="8.5" cy="7" r="4" />
+      <path d="M20 8v6M23 11h-6" />
     </>
   ),
   checkSquare: (
@@ -123,6 +134,24 @@ const PATHS: Record<IconName, React.ReactNode> = {
     <>
       <circle cx="8" cy="8" r="6" />
       <path d="M18.09 10.37A6 6 0 1 1 10.34 18M7 6h1v4M16.71 13.88l.7.71-2.82 2.82" />
+    </>
+  ),
+  target: (
+    <>
+      <circle cx="12" cy="12" r="10" />
+      <circle cx="12" cy="12" r="6" />
+      <circle cx="12" cy="12" r="2" />
+    </>
+  ),
+  trendingUp: (
+    <>
+      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+      <polyline points="17 6 23 6 23 12" />
+    </>
+  ),
+  key: (
+    <>
+      <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3" />
     </>
   ),
 }

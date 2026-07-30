@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { Agent, Division } from '../types'
 import { Section, drawerStyles as s } from './Drawer'
 import { useCopy } from '../lib/useCopy'
 import { apiUrl } from '../lib/api'
+import pe from './PersonaEditor.module.css'
 
 interface Learning {
   id: number
@@ -20,8 +22,10 @@ const SRC_VI: Record<string, string> = {
 }
 
 export function AgentDetail({ agent }: { agent: Agent }) {
+  const [editing, setEditing] = useState(false)
   return (
     <>
+      {editing && <PersonaEditor slug={agent.slug} name={agent.name} onClose={() => setEditing(false)} />}
       <Section label="Mô tả vai trò">
         <div className={s.text}>{agent.description}</div>
       </Section>
@@ -88,15 +92,20 @@ export function AgentDetail({ agent }: { agent: Agent }) {
         <dl className={s.meta}>
           <dt>File</dt>
           <dd>
-            <span className="chip chipMono">{agent.path}</span>
+            <button className={pe.srcLink} onClick={() => setEditing(true)} title="Mở & sửa nội dung persona">
+              {agent.path} ✎
+            </button>
           </dd>
           <dt>Slug</dt>
           <dd>
-            <span className="chip chipMono">{agent.slug}</span>
+            <button className={pe.srcLink} onClick={() => setEditing(true)} title="Mở & sửa nội dung persona">
+              {agent.slug} ✎
+            </button>
           </dd>
           <dt>Độ dài</dt>
           <dd>{agent.words.toLocaleString('vi-VN')} từ</dd>
         </dl>
+        <div className={pe.srcHint}>Bấm File/Slug để xem &amp; sửa nội dung persona (knowledge/skill).</div>
       </Section>
     </>
   )
@@ -216,4 +225,101 @@ export function agentTitle(agent: Agent) {
 
 export function agentSubtitle(agent: Agent, division?: Division) {
   return `${division?.label ?? agent.division} · ${agent.slug}`
+}
+
+/** View + edit an agent's persona (knowledge/skills). Loads the effective body (DB override
+    or the repo .md), saves an override that survives redeploy and takes effect on next reply. */
+function PersonaEditor({ slug, name, onClose }: { slug: string; name: string; onClose: () => void }) {
+  const [body, setBody] = useState('')
+  const [isOverride, setIsOverride] = useState(false)
+  const [path, setPath] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [busy, setBusy] = useState<'save' | 'revert' | null>(null)
+  const [err, setErr] = useState('')
+
+  const load = () => {
+    setLoading(true)
+    fetch(apiUrl(`/api/agents/${slug}/persona`))
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d) {
+          setBody(d.body ?? '')
+          setIsOverride(Boolean(d.isOverride))
+          setPath(d.path ?? '')
+        } else setErr('Không tải được persona')
+      })
+      .catch(() => setErr('Cần backend chạy'))
+      .finally(() => setLoading(false))
+  }
+  useEffect(load, [slug])
+
+  async function save() {
+    if (busy || !body.trim()) return
+    setBusy('save')
+    setErr('')
+    try {
+      const r = await fetch(apiUrl(`/api/agents/${slug}/persona`), {
+        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ body }),
+      })
+      const d = await r.json().catch(() => null)
+      if (r.ok && d?.ok) onClose()
+      else setErr(String(d?.detail || 'Không lưu được'))
+    } catch {
+      setErr('Cần backend chạy')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  async function revert() {
+    if (busy) return
+    if (!window.confirm('Khôi phục persona về bản gốc trong repo (.md)? Bản chỉnh sửa sẽ bị bỏ.')) return
+    setBusy('revert')
+    try {
+      const r = await fetch(apiUrl(`/api/agents/${slug}/persona`), { method: 'DELETE' })
+      if (r.ok) load()
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  return createPortal(
+    <div className={pe.overlay} onClick={onClose}>
+      <div className={pe.modal} onClick={(e) => e.stopPropagation()}>
+        <div className={pe.head}>
+          <div className={pe.headText}>
+            <span className={pe.title}>Sửa persona · {name}</span>
+            <span className={pe.path}>{path}</span>
+          </div>
+          {isOverride && <span className={pe.badge}>đã chỉnh sửa</span>}
+          <button className={pe.close} onClick={onClose} aria-label="Đóng">✕</button>
+        </div>
+        <div className={pe.body}>
+          {loading ? (
+            <div className={pe.loading}>Đang tải…</div>
+          ) : (
+            <textarea className={pe.textarea} value={body} onChange={(e) => setBody(e.target.value)}
+              spellCheck={false} placeholder="Nội dung persona (Markdown)…" />
+          )}
+          {err && <div className={pe.err}>{err}</div>}
+          <div className={pe.note}>
+            Chỉnh sửa lưu vào DB (override) — <b>sống qua redeploy</b> và có hiệu lực ở lần trả lời kế tiếp.
+            File gốc trong repo không đổi. Bộ nhớ tự học (🎓 Đã học) là cơ chế riêng.
+          </div>
+        </div>
+        <div className={pe.foot}>
+          {isOverride && (
+            <button className={pe.revert} onClick={revert} disabled={busy !== null}>
+              {busy === 'revert' ? '…' : '↺ Khôi phục bản gốc'}
+            </button>
+          )}
+          <button className={pe.cancel} onClick={onClose} disabled={busy !== null}>Đóng</button>
+          <button className={pe.save} onClick={save} disabled={busy !== null || loading || !body.trim()}>
+            {busy === 'save' ? 'Đang lưu…' : 'Lưu chỉnh sửa'}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  )
 }

@@ -311,6 +311,11 @@ def export_monitor(env):
           'inputPerMtok', input_per_mtok, 'outputPerMtok', output_per_mtok,
           'note', note, 'source', source) ORDER BY input_per_mtok), '[]'::json)
         FROM company.model_pricing),
+      'infra', (SELECT coalesce(json_agg(json_build_object(
+          'key', key, 'service', service, 'spec', spec,
+          'monthlyUsd', est_monthly_usd::float8, 'note', note) ORDER BY sort, key), '[]'::json)
+        FROM company.infra_pricing),
+      'infraMonthlyUsd', (SELECT coalesce(sum(est_monthly_usd), 0)::float8 FROM company.infra_pricing),
       'agents', (SELECT coalesce(json_agg(a ORDER BY cost DESC NULLS LAST), '[]'::json) FROM (
         SELECT sum(cost_usd) AS cost, json_build_object(
           'slug', u.agent, 'name', coalesce(ag.name, u.agent),
@@ -477,8 +482,13 @@ def main():
 
     sync_agents(env, agents)          # repo .md -> DB (files win: DO UPDATE)
     seed_decisions(env)               # seed once; DB owns rulings thereafter
+    # Owner rows (is_owner) exist only so the 3 executives can be group members / task
+    # assignees (those FKs point at company.agents). They have no persona doc and must NOT
+    # appear in the agent directory/office/stats — exclude them from the export.
     db_agents = dbio.query_json(
-        env, "SELECT coalesce(json_agg(doc ORDER BY division, name), '[]') FROM company.agents"
+        env,
+        "SELECT coalesce(json_agg(doc ORDER BY division, name), '[]') FROM company.agents "
+        "WHERE NOT coalesce(is_owner, false)",
     ) or []
     decisions_payload = export_decisions(env)
     workspace_payload = export_workspace(env)

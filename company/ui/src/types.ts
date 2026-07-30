@@ -86,7 +86,7 @@ export interface AgentRoster {
   }
 }
 
-export type DecisionStatus = 'pending' | 'decided' | 'deferred'
+export type DecisionStatus = 'pending' | 'decided' | 'deferred' | 'cancelled'
 export type DecisionUrgency = 'blocking' | 'normal'
 
 export interface DecisionOption {
@@ -113,7 +113,8 @@ export interface Decision {
   whyYou: string
   options: DecisionOption[]
   recommendation: string
-  costOfNotDeciding: string
+  /** Optional — decisions raised live via the `raise_decision` tool don't set it. */
+  costOfNotDeciding?: string
   /** Present once status is "decided" — what the owner actually ruled and why. */
   ruling?: string
 }
@@ -201,11 +202,22 @@ export interface Message {
   /** null/absent = the owner (CEO/CTO); the human is not an agent. */
   fromAgent?: string
   toAgent?: string
+  /** For owner-sent messages (no fromAgent): which owner account (CEO/CTO/COO/CIO) sent it. */
+  ownerActor?: string
   kind: MessageKind
   body: string
+  /** Uploaded image attachments (served by GET /api/attachments/{id}). */
+  attachments?: MessageAttachment[]
+  /** Tagged documents (folder/name paths) the agent was given to read. */
+  docRefs?: string[]
   /** Per-emoji reactor list, present only when the message has reactions. */
   reactions?: MessageReaction[]
   createdAt: string
+}
+export interface MessageAttachment {
+  id: number
+  name: string
+  mime: string
 }
 
 export interface MessageReaction {
@@ -222,8 +234,8 @@ export interface Channel {
   engagementId?: string
   createdBy?: string
   messages: number
-  /** Agent slugs in this group. Empty/absent = unscoped channel (mention anyone,
-      no-mention messages trigger nobody). */
+  /** Agent slugs in this group. Empty/absent = unscoped channel (anyone is mentionable).
+      In every channel, a message that tags no one triggers no agent — replies need a tag. */
   members?: string[]
   createdAt?: string
 }
@@ -290,10 +302,25 @@ export interface AgentUsage {
   priceUnknown: boolean
 }
 
+/** One line item of estimated monthly AWS infrastructure cost (company.infra_pricing). */
+export interface InfraCost {
+  key: string
+  service: string
+  spec?: string | null
+  monthlyUsd: number
+  note?: string | null
+  /** Tunable values (keys mirror infra/variables.tf) shown in the drawer. */
+  config?: Record<string, string | number>
+  lastDeployAt?: string | null
+}
+
 export interface Monitor {
   note: string
   sample: boolean
   models: ModelPrice[]
+  /** Estimated monthly infra cost line items + total (AWS stack in infra/). */
+  infra?: InfraCost[]
+  infraMonthlyUsd?: number
   agents: AgentUsage[]
   totals: {
     requests: number
@@ -304,4 +331,102 @@ export interface Monitor {
     costUsd: number
     agents: number
   }
+}
+
+/** A company objective ("Mục tiêu") an agent owns, carrying a VIRTUAL revenue figure. */
+export type GoalStatus = 'todo' | 'in_progress' | 'done' | 'at_risk'
+export interface Goal {
+  id: string
+  title: string
+  description: string | null
+  owner: string | null
+  ownerName: string
+  ownerEmoji: string | null
+  ownerDivision: string | null
+  status: GoalStatus
+  progress: number
+  revenueUsd: number
+  targetDate: string | null
+  createdBy: string | null
+}
+export interface GoalFinance {
+  revenueEarned: number
+  revenuePipeline: number
+  revenueTotal: number
+  /** REAL revenue: realized gains from owners' declared investments (Σ (sell−buy)×qty), VND. */
+  investmentRevenue: number
+  goalsDone: number
+  goalsTotal: number
+  /** Real cost = LLM usage (to-date) + infra (monthly estimate). */
+  costMonthlyUsd: number
+  /** Real LLM usage cost to-date (company.usage_costed). */
+  llmCostUsd?: number
+  /** Estimated monthly infra cost (company.infra_pricing). */
+  infraMonthlyUsd?: number
+  /** Virtual revenue earned − real cost. */
+  netRealized: number
+  profitable: boolean
+  /** null when nothing earned yet. */
+  marginPct: number | null
+}
+/** Hired agent, minimal shape for the goal owner picker. */
+export interface GoalOwnerOption {
+  slug: string
+  name: string
+  emoji: string | null
+  division: string | null
+}
+export interface GoalsData {
+  goals: Goal[]
+  finance: GoalFinance
+  agents: GoalOwnerOption[]
+}
+
+/** An owner-declared investment position → the company's REAL revenue source. */
+export type AssetType = 'stock' | 'etf' | 'crypto' | 'bond' | 'fund' | 'other'
+export interface Investment {
+  id: string
+  owner: string
+  ownerName: string
+  symbol: string
+  name?: string | null
+  assetType: AssetType
+  quantity: number
+  buyPrice: number
+  sellPrice?: number | null
+  buyDate?: string | null
+  sellDate?: string | null
+  note?: string | null
+  investedUsd: number
+  /** (sell − buy) × qty, only once sold. */
+  realizedUsd?: number | null
+  sold: boolean
+}
+export interface InvestmentSummary {
+  realizedRevenueUsd: number
+  investedUsd: number
+  openInvestedUsd: number
+  positions: number
+  openPositions: number
+  soldPositions: number
+}
+export interface InvestmentEvent {
+  id: number
+  investmentId: string | null
+  action: 'create' | 'update' | 'sell' | 'delete'
+  actor: string | null
+  actorName: string | null
+  symbol: string | null
+  summary: string
+  /** Money figure behind the event (native VND): invested capital on create/delete,
+      realized P&L on sell. Null for plain updates. */
+  amount?: number | null
+  createdAt: string
+}
+
+export interface InvestmentData {
+  items: Investment[]
+  summary: InvestmentSummary
+  /** Recent Action History (who declared/updated/sold/deleted), newest first. */
+  history?: InvestmentEvent[]
 }

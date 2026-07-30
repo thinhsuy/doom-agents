@@ -14,6 +14,9 @@ const roster = rosterJson as AgentRoster
 // Live office stream + durable floor config come from the FastAPI backend.
 const WS_URL = wsUrl('/ws/office')
 const CONFIG_URL = apiUrl('/api/config/floors')
+// Hired roster LIVE from the DB, so a newly-approved hire gets a room/desk without a
+// rebuild (the static agents.json is only the offline fallback).
+const AGENTS_URL = apiUrl('/api/agents')
 
 const LEGEND = OFFICE_LEGEND // complete set, co-located with the emoji the office emits
 
@@ -131,17 +134,50 @@ export function OfficePage({ workspace }: { workspace: Workspace }) {
     }
   }, [legendOpen])
 
+  // Live hired roster: poll /api/agents; only swap in a new roster when the hired set
+  // (or divisions) actually CHANGES, so the office isn't rebuilt (animations reset)
+  // every poll — only when a hire is approved / removed.
+  const [liveRoster, setLiveRoster] = useState<AgentRoster | null>(null)
+  const rosterSig = useRef('')
+  useEffect(() => {
+    let alive = true
+    const load = async () => {
+      try {
+        const r = await fetch(AGENTS_URL)
+        if (!r.ok) return
+        const d = await r.json()
+        if (!alive || !Array.isArray(d?.agents) || !Array.isArray(d?.divisions)) return
+        const sig =
+          d.agents.filter((a: { hired?: boolean }) => a.hired).map((a: { slug: string }) => a.slug).sort().join(',') +
+          '|' +
+          d.divisions.map((x: { slug: string }) => x.slug).join(',')
+        if (sig === rosterSig.current) return // no change → don't rebuild the world
+        rosterSig.current = sig
+        setLiveRoster(d as AgentRoster)
+      } catch {
+        /* backend offline — static roster stays */
+      }
+    }
+    load()
+    const id = setInterval(load, 10000) // a new hire appears within ~10s of approval
+    return () => {
+      alive = false
+      clearInterval(id)
+    }
+  }, [])
+
   const { agents, divisions } = useMemo(() => {
-    const agents: OfficeAgent[] = roster.agents
+    const src = liveRoster ?? roster
+    const agents: OfficeAgent[] = src.agents
       .filter((a) => a.hired)
       .map((a) => ({ slug: a.slug, name: a.name, emoji: a.emoji, color: a.color, division: a.division }))
-    const divisions: DivisionMeta[] = roster.divisions.map((d) => ({
+    const divisions: DivisionMeta[] = src.divisions.map((d) => ({
       slug: d.slug,
       label: d.label,
       color: d.color,
     }))
     return { agents, divisions }
-  }, [])
+  }, [liveRoster])
 
   useEffect(() => {
     let cancelled = false
@@ -316,7 +352,9 @@ export function OfficePage({ workspace }: { workspace: Workspace }) {
         </div>
       </div>
 
-      {status !== 'online' && (
+      {/* Only when the WS is definitively down — not during the transient 'connecting'
+          phase, so a running backend never shows this hint. */}
+      {status === 'offline' && (
         <div className={s.hint}>
           Văn phòng vẫn hiển thị (agent ngồi tại bàn), nhưng để thấy hoạt động <b>trực tiếp</b> hãy chạy
           backend FastAPI: <code>cd company/api &amp;&amp; ./.venv/bin/uvicorn main:app --port 8000</code>. Nó

@@ -1,0 +1,198 @@
+/* Clickable File/Slug source chips in the agent drawer → open the persona editor. */
+.srcLink {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--primary);
+  background: var(--primary-soft);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 3px 8px;
+  cursor: pointer;
+  text-align: left;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.srcLink:hover {
+  border-color: var(--primary);
+}
+.srcHint {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+/* ---- persona editor modal ---- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 24, 40, 0.5);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 5vh 16px 16px;
+  z-index: 80;
+  overflow-y: auto;
+}
+.modal {
+  width: 100%;
+  max-width: 760px;
+  background: var(--card);
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(20, 24, 40, 0.3);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--line);
+}
+.headText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.path {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.badge {
+  flex: 0 0 auto;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #c77c12;
+  background: var(--amber-soft);
+  border-radius: 6px;
+  padding: 3px 8px;
+}
+.close {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+.close:hover {
+  color: var(--ink);
+}
+.body {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.loading {
+  padding: 40px 0;
+  text-align: center;
+  color: var(--muted);
+}
+.textarea {
+  width: 100%;
+  min-height: 48vh;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink);
+  background: #fff;
+  outline: none;
+}
+.textarea:focus {
+  border-color: var(--primary);
+}
+.err {
+  font-size: 12px;
+  color: #d93463;
+}
+.note {
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.5;
+  background: var(--bg);
+  border-radius: 9px;
+  padding: 9px 12px;
+}
+.note b {
+  color: var(--ink);
+}
+.foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--line);
+}
+.revert {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #c77c12;
+  border: 1px solid var(--line);
+  background: #fff;
+  cursor: pointer;
+}
+.revert:hover:not(:disabled) {
+  border-color: #c77c12;
+}
+.cancel {
+  margin-left: auto;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+  background: #fff;
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+.save {
+  height: 40px;
+  padding: 0 20px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--primary);
+  border: none;
+  cursor: pointer;
+}
+.save:hover:not(:disabled) {
+  opacity: 0.9;
+}
+.save:disabled,
+.cancel:disabled,
+.revert:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

@@ -5,6 +5,9 @@ import workspaceJson from './data/workspace.json'
 import monitorJson from './data/monitor.json'
 import { decisionQueue } from './data/decisions'
 import { apiUrl } from './lib/api'
+import { useAuth } from './lib/auth'
+import { CurrencyProvider } from './lib/currency'
+import { LoginPage } from './pages/LoginPage'
 import { loadReads } from './pages/TeamChatPage'
 import type { AgentRoster, DecisionQueue, Monitor, Workspace } from './types'
 import { Sidebar } from './components/Sidebar'
@@ -16,6 +19,10 @@ import { OfficePage } from './pages/OfficePage'
 import { DocumentsPage } from './pages/DocumentsPage'
 import { ProvidersPage } from './pages/ProvidersPage'
 import { MonitorPage } from './pages/MonitorPage'
+import { RecruitmentPage } from './pages/RecruitmentPage'
+import { GoalsPage } from './pages/GoalsPage'
+import { InvestmentPage } from './pages/InvestmentPage'
+import { AccessToolsPage } from './pages/AccessToolsPage'
 import s from './App.module.css'
 
 const roster = rosterJson as AgentRoster
@@ -95,21 +102,65 @@ function useUnreadCount(messages: Workspace['messages']): number {
   )
 }
 
+/** Count of candidates awaiting the owner's approval (status='proposed'), LIVE from the
+    recruitment endpoint — drives the Tuyển dụng sidebar badge. */
+function useRecruitCount(): number {
+  const [n, setN] = useState(0)
+  useEffect(() => {
+    let alive = true
+    const load = async () => {
+      try {
+        const r = await fetch(apiUrl('/api/recruitment'))
+        if (!r.ok) return
+        const d = await r.json()
+        if (alive && Array.isArray(d?.candidates)) {
+          setN(d.candidates.filter((c: { status: string }) => c.status === 'proposed').length)
+        }
+      } catch {
+        /* backend offline — keep last count */
+      }
+    }
+    load()
+    const id = setInterval(load, 5000)
+    return () => {
+      alive = false
+      clearInterval(id)
+    }
+  }, [])
+  return n
+}
+
+/** Auth gate: the console only mounts (and its live hooks only fire) once one of the
+    3 owner accounts is logged in. */
 export function App() {
+  const { user, loading } = useAuth()
+  if (loading) {
+    return <div className={s.authSplash}>Đang tải…</div>
+  }
+  if (!user) return <LoginPage />
+  // CurrencyProvider mounts only when logged in, so its /api/fx fetch carries the session.
+  return (
+    <CurrencyProvider>
+      <Console />
+    </CurrencyProvider>
+  )
+}
+
+function Console() {
   // One search box in the topbar drives whichever view is showing.
   const [query, setQuery] = useState('')
   const workspace = useLiveWorkspace()
   const unread = useUnreadCount(workspace.messages)
   const liveDecisions = useLiveDecisions()
+  const recruitCount = useRecruitCount()
   const pending = liveDecisions.decisions.filter((d) => d.status === 'pending').length
-  // Active tasks (not accepted/deferred) and total messages drive the sidebar counts.
-  const activeTasks = workspace.tasks.filter(
-    (t) => !['accepted', 'deferred', 'cancelled'].includes(t.status),
-  ).length
+  // Sidebar badges: Tasks = ESCALATED only (needs the owner to act); Office = unread agent
+  // messages; Tuyển dụng = candidates awaiting approval; Quyết định = pending decisions.
+  const escalatedTasks = workspace.tasks.filter((t) => t.status === 'escalated').length
 
   return (
     <div className={s.shell}>
-      <Sidebar pendingCount={pending} taskCount={activeTasks} messageCount={unread} />
+      <Sidebar pendingCount={pending} recruitCount={recruitCount} taskCount={escalatedTasks} messageCount={unread} />
       <div className={s.main}>
         <Topbar query={query} onQueryChange={setQuery} />
         <main className={s.content}>
@@ -149,7 +200,11 @@ export function App() {
             <Route path="/workspace/tasks/:id" element={<TasksPage workspace={workspace} />} />
             <Route path="/workspace/docs" element={<DocumentsPage />} />
             <Route path="/workspace/docs/:id" element={<DocumentsPage />} />
+            <Route path="/recruitment" element={<RecruitmentPage />} />
+            <Route path="/goals" element={<GoalsPage />} />
+            <Route path="/investment" element={<InvestmentPage />} />
             <Route path="/providers" element={<ProvidersPage roster={roster} />} />
+            <Route path="/access-tools" element={<AccessToolsPage />} />
             <Route path="/monitor" element={<MonitorPage monitor={monitor} />} />
             <Route path="*" element={<Navigate to="/agents" replace />} />
           </Routes>

@@ -3,6 +3,11 @@
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   overflow: hidden;
+  /* Consistent gap between stacked panels (pages render them in block flow, no flex gap). */
+  margin-bottom: 20px;
+}
+.panel:last-child {
+  margin-bottom: 0;
 }
 
 .head {

@@ -56,6 +56,7 @@ SELECT json_build_object(
     SELECT id AS mid, json_strip_nulls(json_build_object(
       'id', id, 'channelId', channel_id, 'engagementId', engagement_id, 'taskId', task_id,
       'fromAgent', from_agent, 'toAgent', to_agent, 'ownerActor', owner_actor, 'kind', kind, 'body', body,
+      'attachments', payload->'attachments', 'docRefs', payload->'docRefs',
       'reactions', (SELECT json_agg(json_build_object('emoji', emoji, 'agents', agents) ORDER BY emoji)
           FROM (SELECT emoji, json_agg(agent ORDER BY agent) AS agents
                 FROM company.message_reactions r WHERE r.message_id = messages.id
@@ -121,6 +122,7 @@ SELECT json_build_object(
     SELECT json_strip_nulls(json_build_object(
       'id', id, 'channelId', channel_id, 'engagementId', engagement_id, 'taskId', task_id,
       'fromAgent', from_agent, 'toAgent', to_agent, 'ownerActor', owner_actor, 'kind', kind, 'body', body,
+      'attachments', payload->'attachments', 'docRefs', payload->'docRefs',
       'reactions', (SELECT json_agg(json_build_object('emoji', emoji, 'agents', agents) ORDER BY emoji)
           FROM (SELECT emoji, json_agg(agent ORDER BY agent) AS agents
                 FROM company.message_reactions r WHERE r.message_id = messages.id GROUP BY emoji) rr),

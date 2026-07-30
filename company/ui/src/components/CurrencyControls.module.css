@@ -1,0 +1,300 @@
+.card {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px;
+  align-items: flex-start;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 220px;
+}
+
+.label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #a0a6bc;
+}
+
+.toggle {
+  display: inline-flex;
+  padding: 3px;
+  gap: 3px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  width: fit-content;
+}
+.opt {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.optOn {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 1px 4px rgba(78, 90, 232, 0.35);
+}
+
+.hint {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.select {
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  background: #fff;
+  outline: none;
+  min-width: 220px;
+}
+.select:focus {
+  border-color: var(--primary);
+}
+
+.rateRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.rate {
+  font-size: 13.5px;
+  color: var(--ink);
+}
+.rate b {
+  font-family: var(--mono);
+  color: var(--primary);
+}
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.refresh {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 8px;
+  width: 28px;
+  height: 26px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--muted);
+}
+.refresh:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.asOf {
+  font-size: 11px;
+  color: #a0a6bc;
+}
+
+/* ---- custom provider config ---- */
+.provAdd {
+  align-self: flex-start;
+  border: 1px dashed var(--line);
+  background: #fff;
+  color: var(--primary);
+  font-size: 12.5px;
+  font-weight: 600;
+  border-radius: 9px;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+.provAdd:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+.provList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.provChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 12px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.provChip:hover {
+  border-color: var(--primary);
+}
+.provId {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+/* ---- provider modal ---- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 24, 40, 0.42);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 8vh 16px 16px;
+  z-index: 60;
+  overflow-y: auto;
+}
+.modal {
+  width: 100%;
+  max-width: 520px;
+  background: var(--card);
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(20, 24, 40, 0.28);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.modalHead {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+}
+.modalTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.modalClose {
+  margin-left: auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+}
+.modalBody {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.row3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+.flabel {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #a0a6bc;
+}
+.flabelHint {
+  text-transform: none;
+  font-weight: 500;
+  color: var(--muted);
+}
+.input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  background: #fff;
+  outline: none;
+}
+.input:focus {
+  border-color: var(--primary);
+}
+.mono {
+  font-family: var(--mono);
+}
+.fieldHint {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.err {
+  font-size: 12px;
+  color: #d93463;
+}
+.modalFoot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--line);
+}
+.delBtn {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #d93463;
+  border: 1px solid var(--line);
+  background: #fff;
+  cursor: pointer;
+}
+.cancel {
+  margin-left: auto;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+  background: #fff;
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+.saveBtn {
+  height: 38px;
+  padding: 0 20px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--primary);
+  border: none;
+  cursor: pointer;
+}

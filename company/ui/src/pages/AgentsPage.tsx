@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import type { AgentRoster, Decision } from '../types'
 import { StatGrid, type Stat } from '../components/StatCard'
 import { AgentDirectory } from '../components/AgentDirectory'
+import { OwnersStrip } from '../components/OwnersStrip'
 import { Drawer } from '../components/Drawer'
 import {
   AgentDetail,
@@ -89,6 +90,7 @@ export function AgentsPage({ roster, decisions, query, onQueryChange }: Props) {
   return (
     <>
       <StatGrid stats={stats} />
+      <OwnersStrip />
       <AgentDirectory
         divisions={roster.divisions}
         agents={roster.agents}

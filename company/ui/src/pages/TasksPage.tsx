@@ -1,7 +1,8 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import type { Task, TaskStatus, Workspace } from '../types'
 import { agentDisplay } from '../lib/agents'
+import { apiUrl } from '../lib/api'
 import { StatGrid, type Stat } from '../components/StatCard'
 import { SampleNotice } from '../components/SampleNotice'
 import { Drawer } from '../components/Drawer'
@@ -11,18 +12,70 @@ import p from '../components/Panel.module.css'
 
 // Jira-like columns. rejected sits in the review column (it loops back to QA);
 // escalated + deferred share an "off the board" column so they don't vanish.
-const COLUMNS: { key: string; label: string; color: string; statuses: TaskStatus[] }[] = [
-  { key: 'todo', label: 'Cần làm', color: '#8A90A8', statuses: ['todo'] },
-  { key: 'doing', label: 'Đang làm', color: '#4E5AE8', statuses: ['in_progress'] },
-  { key: 'review', label: 'Đang review', color: '#F5A93F', statuses: ['in_qa', 'rejected'] },
-  { key: 'done', label: 'Xong', color: '#21C286', statuses: ['accepted'] },
-  { key: 'off', label: 'Hoãn / Huỷ / Escalate', color: '#F2547D', statuses: ['deferred', 'escalated', 'cancelled'] },
+// `drop` = the canonical status a drag-drop INTO this column sets (the "off" column
+// holds 3 statuses, so a drop there defaults to deferred/hoãn — cancel needs a reason
+// so it stays in the detail drawer).
+const COLUMNS: { key: string; label: string; color: string; statuses: TaskStatus[]; drop: TaskStatus }[] = [
+  { key: 'todo', label: 'Cần làm', color: '#8A90A8', statuses: ['todo'], drop: 'todo' },
+  { key: 'doing', label: 'Đang làm', color: '#4E5AE8', statuses: ['in_progress'], drop: 'in_progress' },
+  { key: 'review', label: 'Đang review', color: '#F5A93F', statuses: ['in_qa', 'rejected'], drop: 'in_qa' },
+  { key: 'done', label: 'Xong', color: '#21C286', statuses: ['accepted'], drop: 'accepted' },
+  { key: 'off', label: 'Hoãn / Huỷ / Escalate', color: '#F2547D', statuses: ['deferred', 'escalated', 'cancelled'], drop: 'deferred' },
 ]
 
 export function TasksPage({ workspace }: { workspace: Workspace }) {
-  const { tasks } = workspace
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
+
+  // Optimistic status overrides for owner drag-drop, applied on top of the live
+  // workspace and cleared once the 5s poll confirms the server caught up.
+  const [override, setOverride] = useState<Record<string, TaskStatus>>({})
+  const [dragId, setDragId] = useState<string | null>(null)
+  const [overCol, setOverCol] = useState<string | null>(null)
+
+  const tasks = useMemo(
+    () => workspace.tasks.map((t) => (override[t.id] ? { ...t, status: override[t.id]! } : t)),
+    [workspace.tasks, override],
+  )
+
+  useEffect(() => {
+    setOverride((prev) => {
+      if (!Object.keys(prev).length) return prev
+      const next = { ...prev }
+      let changed = false
+      for (const t of workspace.tasks) {
+        if (next[t.id] && next[t.id] === t.status) {
+          delete next[t.id]
+          changed = true
+        }
+      }
+      return changed ? next : prev
+    })
+  }, [workspace.tasks])
+
+  async function moveTo(col: (typeof COLUMNS)[number]) {
+    const id = dragId
+    setDragId(null)
+    setOverCol(null)
+    if (!id) return
+    const t = tasks.find((x) => x.id === id)
+    if (!t || t.status === col.drop) return
+    setOverride((prev) => ({ ...prev, [id]: col.drop })) // optimistic
+    try {
+      const r = await fetch(apiUrl(`/api/tasks/${id}/status`), {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ status: col.drop }),
+      })
+      if (!r.ok) throw new Error()
+    } catch {
+      setOverride((prev) => {
+        const n = { ...prev }
+        delete n[id]
+        return n
+      }) // rollback
+    }
+  }
 
   const openTask = useMemo(
     () => (id ? tasks.find((t) => t.id === id) : undefined),
@@ -69,7 +122,24 @@ export function TasksPage({ workspace }: { workspace: Workspace }) {
           {COLUMNS.map((col) => {
             const list = byColumn.get(col.key)!
             return (
-              <div key={col.key} className={s.col}>
+              <div
+                key={col.key}
+                className={overCol === col.key ? `${s.col} ${s.colOver}` : s.col}
+                onDragOver={(e) => {
+                  if (dragId) {
+                    e.preventDefault()
+                    if (overCol !== col.key) setOverCol(col.key)
+                  }
+                }}
+                onDragLeave={(e) => {
+                  // only clear when the pointer actually leaves the column box
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) setOverCol((c) => (c === col.key ? null : c))
+                }}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  moveTo(col)
+                }}
+              >
                 <div className={s.colHead}>
                   <span className={s.colDot} style={{ background: col.color }} />
                   <span className={s.colName}>{col.label}</span>
@@ -84,6 +154,12 @@ export function TasksPage({ workspace }: { workspace: Workspace }) {
                         key={t.id}
                         task={t}
                         selected={t.id === openTask?.id}
+                        dragging={dragId === t.id}
+                        onDragStart={() => setDragId(t.id)}
+                        onDragEnd={() => {
+                          setDragId(null)
+                          setOverCol(null)
+                        }}
                         onOpen={() => navigate(`/workspace/tasks/${t.id}`)}
                       />
                     ))
@@ -99,7 +175,7 @@ export function TasksPage({ workspace }: { workspace: Workspace }) {
         open={Boolean(openTask)}
         title={openTask ? `${openTask.id} — ${openTask.title}` : ''}
         subtitle={openTask ? `Reporter ${agentDisplay(openTask.reporter).name} · PIC ${agentDisplay(openTask.assignee).name}` : undefined}
-        footer={openTask ? <TaskDetailFooter task={openTask} /> : undefined}
+        footer={openTask ? <TaskDetailFooter task={openTask} onDeleted={() => navigate('/workspace/tasks')} /> : undefined}
         onClose={() => navigate('/workspace/tasks')}
       >
         {openTask && <TaskDetail task={openTask} />}
@@ -108,15 +184,38 @@ export function TasksPage({ workspace }: { workspace: Workspace }) {
   )
 }
 
-function TaskCard({ task, selected, onOpen }: { task: Task; selected: boolean; onOpen: () => void }) {
+function TaskCard({
+  task,
+  selected,
+  dragging,
+  onOpen,
+  onDragStart,
+  onDragEnd,
+}: {
+  task: Task
+  selected: boolean
+  dragging: boolean
+  onOpen: () => void
+  onDragStart: () => void
+  onDragEnd: () => void
+}) {
   const who = agentDisplay(task.assignee)
   const nearCap = task.attempt >= 2 && task.status !== 'accepted'
   const pr = priorityMeta(task.priority)
+  const cls = [s.card, selected && s.cardSelected, dragging && s.cardDragging].filter(Boolean).join(' ')
   return (
     <button
-      className={selected ? `${s.card} ${s.cardSelected}` : s.card}
+      className={cls}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = 'move'
+        e.dataTransfer.setData('text/plain', task.id)
+        onDragStart()
+      }}
+      onDragEnd={onDragEnd}
       onClick={onOpen}
       aria-label={`Mở chi tiết ${task.id}`}
+      title="Kéo để đổi trạng thái · bấm để mở chi tiết"
     >
       <span className={s.priorityBar} style={{ background: pr.color }} title={`Ưu tiên: ${pr.label}`} />
       <div className={s.cardTop}>

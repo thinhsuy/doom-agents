@@ -1,4 +1,5 @@
 import { Icon } from './Icon'
+import { useAuth } from '../lib/auth'
 import s from './Topbar.module.css'
 
 interface Props {
@@ -7,9 +8,12 @@ interface Props {
 }
 
 export function Topbar({ query, onQueryChange }: Props) {
+  const { user } = useAuth()
+  const name = user?.displayName ?? 'CEO / CTO'
+  const initials = (user?.role ?? 'CT').toUpperCase()
   return (
     <header className={s.topbar}>
-      <h1 className={s.greeting}>Chào CEO &amp; CTO 👋</h1>
+      <h1 className={s.greeting}>Chào {name} 👋</h1>
 
       <div className={s.search}>
         <Icon name="search" size={15} color="#a8aec4" strokeWidth={2.2} />
@@ -30,8 +34,8 @@ export function Topbar({ query, onQueryChange }: Props) {
       </button>
 
       <div className={s.user}>
-        <div className={s.avatar}>CT</div>
-        <div className={s.userName}>CEO / CTO</div>
+        <div className={s.avatar}>{initials}</div>
+        <div className={s.userName}>{name}</div>
         <Icon name="chevronDown" size={12} color="#8a90a8" strokeWidth={2.6} />
       </div>
     </header>

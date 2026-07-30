@@ -1,0 +1,185 @@
+/* CEO/CTO decision form — inside the decision drawer, only while status is pending. */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.optRadios {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.optRadio {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: #3a4162;
+  cursor: pointer;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  transition: border-color 0.12s, background 0.12s;
+}
+.optRadio:hover {
+  border-color: var(--primary);
+}
+.optRadioOn {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+.optRadio input {
+  margin-top: 2px;
+  flex: 0 0 auto;
+}
+.input {
+  width: 100%;
+  min-height: 84px;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: #fff;
+  outline: none;
+}
+.input:focus {
+  border-color: var(--primary);
+}
+.submit {
+  height: 40px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--primary);
+  transition: opacity 0.15s;
+}
+.submit:hover:not(:disabled) {
+  opacity: 0.9;
+}
+.submit:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.hint {
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.err {
+  font-size: 12px;
+  color: #d93463;
+}
+.done {
+  background: var(--green-soft);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: #149467;
+  line-height: 1.55;
+}
+.done strong {
+  display: block;
+  margin-bottom: 3px;
+}
+
+/* ---- Cancel a decision (drop it) ---- */
+.cancelLink {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 4px 2px;
+  font-size: 12.5px;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.cancelLink:hover:not(:disabled) {
+  color: #d93463;
+}
+.cancelLink:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.cancelBox {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 12px;
+  border: 1px solid #f3c7d3;
+  border-radius: 10px;
+  background: #fdf2f5;
+}
+.cancelInput {
+  width: 100%;
+  min-height: 56px;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: #fff;
+  outline: none;
+}
+.cancelInput:focus {
+  border-color: #d93463;
+}
+.cancelActions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.cancelBack {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 9px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+  background: #fff;
+  border: 1px solid var(--line);
+}
+.cancelBack:hover:not(:disabled) {
+  border-color: var(--muted);
+}
+.cancelConfirm {
+  height: 34px;
+  padding: 0 16px;
+  border-radius: 9px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #fff;
+  background: #d93463;
+  border: none;
+}
+.cancelConfirm:hover:not(:disabled) {
+  opacity: 0.9;
+}
+.cancelBack:disabled,
+.cancelConfirm:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+/* Recorded cancel note (shown when a decision's status is already 'cancelled'). */
+.cancelled {
+  background: var(--red-soft);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: #d93463;
+  line-height: 1.55;
+}
+.cancelled strong {
+  display: block;
+  margin-bottom: 3px;
+}

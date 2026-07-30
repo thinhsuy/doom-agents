@@ -61,6 +61,10 @@ code {
   background: var(--bg);
   color: var(--muted);
 }
+.pillCancelled {
+  background: var(--red-soft);
+  color: #d93463;
+}
 .pillBlocking {
   background: var(--red-soft);
   color: #d93463;
@@ -77,6 +81,7 @@ code {
   padding: 5px 10px;
   color: #5e6584;
   display: inline-block;
+  white-space: nowrap; /* short codes like "D-1" must never wrap onto two lines */
 }
 .chipMono {
   font-family: var(--mono);

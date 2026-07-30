@@ -1,0 +1,120 @@
+name: Deploy to AWS
+
+# Every merge to main: build the FE+BE image → push to ECR → run DB migrations/seeds as a
+# one-off ECS task inside the VPC (so it can reach the private RDS) → roll the ECS service →
+# health-check FE + BE. Infra (VPC/RDS/ALB) is NOT touched here — that stays a deliberate,
+# reviewed `terraform apply`. See infra/README.md.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+# Never run two deploys at once; let an in-flight one finish (don't cancel a half-done roll).
+concurrency:
+  group: deploy-aws-main
+  cancel-in-progress: false
+
+permissions:
+  id-token: write   # mint the OIDC token to assume the AWS role
+  contents: read
+
+env:
+  AWS_REGION: ap-southeast-1        # = infra var.region
+  PROJECT: agency-agents            # = infra var.project  → ECR repo + container name
+  NAME: agency-agents-prod          # = "${project}-${env}" → cluster / service / task family
+  ALB_NAME: agency-agents-prod-alb  # = "${name}-alb"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & push image
+        id: build
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          set -euo pipefail
+          IMAGE="$REGISTRY/$PROJECT"
+          TAG="${GITHUB_SHA::12}"
+          docker build -t "$IMAGE:$TAG" -t "$IMAGE:latest" .   # context = repo root
+          docker push "$IMAGE:$TAG"
+          docker push "$IMAGE:latest"
+          echo "image=$IMAGE:$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Register new task definition (same task def, new image)
+        id: taskdef
+        run: |
+          set -euo pipefail
+          aws ecs describe-task-definition --task-definition "$NAME" \
+            --query 'taskDefinition' --output json > td.json
+          jq --arg IMG "${{ steps.build.outputs.image }}" '
+            .containerDefinitions[0].image = $IMG
+            | del(.taskDefinitionArn,.revision,.status,.requiresAttributes,.compatibilities,.registeredAt,.registeredBy)
+          ' td.json > td.new.json
+          ARN=$(aws ecs register-task-definition --cli-input-json file://td.new.json \
+            --query 'taskDefinition.taskDefinitionArn' --output text)
+          echo "arn=$ARN" >> "$GITHUB_OUTPUT"
+          echo "Registered $ARN"
+
+      - name: Run DB migrations (one-off ECS task, in-VPC → RDS)
+        run: |
+          set -euo pipefail
+          NET=$(aws ecs describe-services --cluster "$NAME" --services "$NAME" \
+            --query 'services[0].networkConfiguration' --output json)
+          TASK_ARN=$(aws ecs run-task --cluster "$NAME" \
+            --task-definition "${{ steps.taskdef.outputs.arn }}" --launch-type FARGATE \
+            --network-configuration "$NET" --started-by "gha-migrate" \
+            --overrides "{\"containerOverrides\":[{\"name\":\"$PROJECT\",\"command\":[\"python\",\"/app/company/db/migrate.py\"]}]}" \
+            --query 'tasks[0].taskArn' --output text)
+          echo "Migration task: $TASK_ARN"
+          aws ecs wait tasks-stopped --cluster "$NAME" --tasks "$TASK_ARN"
+          EXIT=$(aws ecs describe-tasks --cluster "$NAME" --tasks "$TASK_ARN" \
+            --query 'tasks[0].containers[0].exitCode' --output text)
+          REASON=$(aws ecs describe-tasks --cluster "$NAME" --tasks "$TASK_ARN" \
+            --query 'tasks[0].stoppedReason' --output text)
+          echo "Migration exit=$EXIT reason=$REASON"
+          if [ "$EXIT" != "0" ]; then
+            echo "::error::DB migrations failed — not rolling the service. Check the /ecs/$NAME logs."
+            exit 1
+          fi
+
+      - name: Roll the service onto the new image
+        run: |
+          set -euo pipefail
+          aws ecs update-service --cluster "$NAME" --service "$NAME" \
+            --task-definition "${{ steps.taskdef.outputs.arn }}" --force-new-deployment >/dev/null
+          echo "Waiting for the service to stabilise…"
+          aws ecs wait services-stable --cluster "$NAME" --services "$NAME"
+
+      - name: Health check (FE + BE)
+        run: |
+          set -euo pipefail
+          DNS=$(aws elbv2 describe-load-balancers --names "$ALB_NAME" \
+            --query 'LoadBalancers[0].DNSName' --output text)
+          BASE="http://$DNS"
+          echo "Checking $BASE …"
+          # BE: /api/health is the open, non-auth-gated endpoint (also the ALB health check).
+          code=""
+          for i in $(seq 1 24); do
+            code=$(curl -fsS -L -o /dev/null -w '%{http_code}' "$BASE/api/health" || true)
+            [ "$code" = "200" ] && break
+            sleep 10
+          done
+          [ "$code" = "200" ] || { echo "::error::BE /api/health not healthy (got $code)"; exit 1; }
+          # FE: the SPA (index.html) is served at / and is not behind the auth gate.
+          fe=$(curl -fsS -L -o /dev/null -w '%{http_code}' "$BASE/" || true)
+          [ "$fe" = "200" ] || { echo "::error::FE root not served (got $fe)"; exit 1; }
+          echo "✅ FE + BE healthy at $BASE"

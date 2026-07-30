@@ -146,61 +146,6 @@
   margin-top: 4px;
 }
 
-/* ---- provider status cards ---- */
-.providerCards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 14px;
-  margin-bottom: 20px;
-}
-.providerCard {
-  background: var(--card);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 16px 18px;
-}
-.providerTop {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-.providerName {
-  font-size: 15px;
-  font-weight: 600;
-}
-.ok {
-  font-size: 11.5px;
-  font-weight: 600;
-  color: #149467;
-}
-.missing {
-  font-size: 11.5px;
-  font-weight: 600;
-  color: #d93463;
-}
-.providerModels {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-}
-.modelChip {
-  font-size: 11.5px;
-  color: #5e6584;
-  background: var(--bg);
-  border-radius: 7px;
-  padding: 4px 10px;
-}
-.providerHint {
-  margin-top: 10px;
-  font-size: 11.5px;
-  color: #95610c;
-  background: var(--amber-soft);
-  border-radius: 8px;
-  padding: 8px 10px;
-}
-
 /* ---- per-agent model table ---- */
 .tableWrap {
   overflow-x: auto;
@@ -255,15 +200,75 @@
   color: #3a4162;
   cursor: pointer;
 }
-.bulkDiv {
+/* ---- department multi-select filter ---- */
+.divFilter {
+  position: relative;
+}
+.divFilterBtn {
   height: 32px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 0 8px;
+  padding: 0 12px;
   font-size: 12.5px;
+  font-weight: 600;
   background: #fff;
   color: #5e6584;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.divFilterBtn:hover {
+  border-color: var(--primary);
+}
+.divFilterOn {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+.caret {
+  font-size: 9px;
+  opacity: 0.7;
+}
+.divFilterPop {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 30;
+  min-width: 220px;
+  max-height: 320px;
+  overflow-y: auto;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(20, 24, 40, 0.18);
+  padding: 6px;
+}
+.divFilterRow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 9px;
+  border-radius: 7px;
+  font-size: 13px;
+  color: var(--ink);
   text-transform: capitalize;
+  cursor: pointer;
+}
+.divFilterRow:hover {
+  background: var(--bg);
+}
+.divFilterClear {
+  width: 100%;
+  margin-top: 4px;
+  padding: 7px;
+  border: none;
+  border-top: 1px solid var(--line);
+  background: transparent;
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
 }
 .clearSel {
   font-size: 12px;
@@ -318,3 +323,217 @@ thead .priceCol {
 .priceOut { color: #d93463; }
 .priceSep { color: var(--muted); margin: 0 3px; }
 .priceNa { color: var(--muted); }
+
+/* ---- Access Tools column ---- */
+.accessCol {
+  min-width: 220px;
+  max-width: 340px;
+}
+.access {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.permChip {
+  font-size: 10.5px;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 2px 8px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  cursor: help;
+  white-space: nowrap;
+}
+.permHigh {
+  background: var(--red-soft);
+  color: #d93463;
+}
+.permBase {
+  background: var(--bg);
+  color: var(--muted);
+}
+
+/* ---- editable Access Tools cell ---- */
+.accessEditable {
+  cursor: pointer;
+}
+.accessEditable:hover {
+  background: #f7f9fd;
+}
+.accessEdit {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--primary);
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.accessEditable:hover .accessEdit {
+  opacity: 1;
+}
+
+/* ---- per-agent permission editor modal ---- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 24, 40, 0.42);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 7vh 16px 16px;
+  z-index: 60;
+  overflow-y: auto;
+}
+.modal {
+  width: 100%;
+  max-width: 560px;
+  background: var(--card);
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(20, 24, 40, 0.28);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.modalHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+}
+.modalTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.modalClose {
+  margin-left: auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+}
+.modalClose:hover {
+  color: var(--ink);
+}
+.modalHint {
+  padding: 12px 20px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+  border-bottom: 1px solid var(--line);
+}
+.permList {
+  padding: 8px 12px;
+  max-height: 52vh;
+  overflow-y: auto;
+}
+.permRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 8px;
+  border-radius: 9px;
+  cursor: pointer;
+}
+.permRow:hover {
+  background: var(--bg);
+}
+.permRow input {
+  margin-top: 3px;
+}
+.permInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.permTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.permLabel {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.riskTag {
+  font-size: 10px;
+  font-weight: 700;
+  color: #d93463;
+  background: var(--red-soft);
+  border-radius: 5px;
+  padding: 1px 6px;
+}
+.permKey {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+.permDesc {
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+.permTools {
+  font-size: 11px;
+  color: #a0a6bc;
+  font-family: var(--mono);
+  margin-top: 2px;
+}
+.permSection {
+  position: sticky;
+  top: 0;
+  background: var(--card);
+  padding: 8px 8px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #a0a6bc;
+  border-bottom: 1px solid var(--line);
+  z-index: 1;
+}
+.mono {
+  font-family: var(--mono);
+}
+.modalFoot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--line);
+}
+.cancel {
+  margin-left: auto;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+  background: #fff;
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+.saveBtn {
+  height: 38px;
+  padding: 0 20px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--primary);
+  border: none;
+  cursor: pointer;
+}
+.saveBtn:hover {
+  opacity: 0.9;
+}

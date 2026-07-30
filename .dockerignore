@@ -1,0 +1,19 @@
+# Keep the image lean + never bake secrets/state into it.
+.git
+.gitignore
+**/__pycache__/
+**/*.pyc
+**/.venv/
+**/venv/
+**/node_modules/
+company/ui/dist/            # rebuilt fresh in the UI stage
+company/ui/src/data/        # generated snapshots (build.py) — not needed at runtime
+integrations/*/            # convert.sh output (gitignored)
+infra/                     # terraform lives here, not in the app image
+**/.env.local
+**/.session_secret
+**/*.tfstate*
+**/.terraform/
+scratchpad/
+*.md.bak
+.DS_Store

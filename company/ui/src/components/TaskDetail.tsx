@@ -3,6 +3,8 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { Task, TaskComment, TaskHistoryEvent, TaskPriority, TaskStatus } from '../types'
 import { agentDisplay } from '../lib/agents'
+import { apiUrl } from '../lib/api'
+import { useAuth } from '../lib/auth'
 import { Section, drawerStyles as d } from './Drawer'
 import { useCopy } from '../lib/useCopy'
 import s from './TaskDetail.module.css'
@@ -237,8 +239,31 @@ export function taskRecord(t: Task): string {
   ].join('\n')
 }
 
-export function TaskDetailFooter({ task }: { task: Task }) {
+export function TaskDetailFooter({ task, onDeleted }: { task: Task; onDeleted?: () => void }) {
   const [state, copy] = useCopy()
+  const { user } = useAuth()
+  const [deleting, setDeleting] = useState(false)
+  // Only the CEO may delete a ticket (not CTO/COO/CIO); the backend enforces it too.
+  const canDelete = user?.username === 'ceo'
+
+  async function remove() {
+    if (deleting) return
+    if (!window.confirm(`Xoá vĩnh viễn ticket ${task.id} — ${task.title}?\nMất luôn trao đổi + lịch sử, không hoàn tác được.`)) return
+    setDeleting(true)
+    try {
+      const r = await fetch(apiUrl(`/api/tasks/${task.id}`), { method: 'DELETE', credentials: 'include' })
+      if (r.ok) onDeleted?.()
+      else {
+        const dd = await r.json().catch(() => null)
+        window.alert(String(dd?.detail || 'Không xoá được ticket'))
+      }
+    } catch {
+      window.alert('Cần backend chạy')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   return (
     <>
       <button className={`${d.btn} ${d.btnPrimary}`} onClick={() => copy(taskRecord(task))}>
@@ -248,6 +273,11 @@ export function TaskDetailFooter({ task }: { task: Task }) {
             ? 'Không sao chép được'
             : 'Sao chép ticket'}
       </button>
+      {canDelete && (
+        <button className={`${d.btn} ${s.deleteBtn}`} onClick={remove} disabled={deleting}>
+          {deleting ? 'Đang xoá…' : '🗑 Xoá ticket'}
+        </button>
+      )}
       <div className={d.footNote}>
         Console chỉ đọc — agent thao tác
         <br />

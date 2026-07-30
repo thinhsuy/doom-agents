@@ -183,6 +183,35 @@
 .delCancel:hover {
   background: var(--bg);
 }
+/* Clear history — less severe than deleting the group (keeps the channel), so amber. */
+.clearBtn {
+  font-size: 11.5px;
+  color: #8a90a8;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 5px 10px;
+  transition: color 0.12s, border-color 0.12s;
+}
+.clearBtn:hover:not(:disabled) {
+  color: #c77c12;
+  border-color: #c77c12;
+}
+.clearBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.clearConfirm {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #fff;
+  background: #c77c12;
+  border-radius: 8px;
+  padding: 5px 10px;
+}
+.clearConfirm:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
 /* ---- group info popup (the (!) button, top-right of the thread header) ---- */
 .groupPopWrap {
   position: relative;
@@ -288,9 +317,33 @@
   background: var(--bg);
 }
 .popMemberName {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+/* ✕ to remove a member — appears on row hover */
+.memberRemove {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--muted);
+  opacity: 0;
+  transition: opacity 0.12s, background 0.12s, color 0.12s;
+}
+.popMember:hover .memberRemove {
+  opacity: 1;
+}
+.memberRemove:hover:not(:disabled) {
+  background: var(--red-soft);
+  color: #d93463;
+}
+.memberRemove:disabled {
+  opacity: 0.3;
+  cursor: default;
 }
 .popEmpty {
   font-size: 12px;
@@ -316,6 +369,10 @@
   margin-top: 12px;
   padding-top: 10px;
   border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
 }
 .memberChipEmoji {
   width: 20px;
@@ -326,6 +383,115 @@
   place-items: center;
   font-size: 11px;
   flex: 0 0 20px;
+}
+
+/* ---- add-member ---- */
+.addMemberBtn {
+  margin-top: 8px;
+  width: 100%;
+  height: 34px;
+  border: 1px dashed var(--line);
+  border-radius: 9px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--primary);
+  background: #fff;
+  transition: border-color 0.12s, background 0.12s;
+}
+.addMemberBtn:hover:not(:disabled) {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+.addMemberBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+  color: var(--muted);
+}
+.addPicker {
+  margin-top: 8px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 8px;
+}
+.addSearch {
+  width: 100%;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 10px;
+  font-size: 12.5px;
+  background: #fff;
+  outline: none;
+  margin-bottom: 6px;
+}
+.addSearch:focus {
+  border-color: var(--primary);
+}
+.addList {
+  max-height: 180px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.addItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  text-align: left;
+  width: 100%;
+  background: transparent;
+  transition: background 0.12s;
+}
+.addItem:hover:not(:disabled) {
+  background: var(--primary-soft);
+}
+.addItem:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.addItemEmoji {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  flex: 0 0 20px;
+}
+.addItemName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.addItemDiv {
+  font-size: 10.5px;
+  color: var(--muted);
+  text-transform: capitalize;
+  flex: 0 0 auto;
+}
+.addPlus {
+  flex: 0 0 auto;
+  color: var(--primary);
+  font-weight: 700;
+}
+.addDone {
+  margin-top: 6px;
+  width: 100%;
+  height: 30px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--bg);
+  color: #5e6584;
+}
+.addDone:hover {
+  background: var(--line);
 }
 .threadTitle {
   font-size: 15px;
@@ -533,6 +699,30 @@
   font-weight: 700;
   color: #2b3152;
 }
+/* highlighted @mention — bold + sea blue, with a soft pill so the tagged person pops */
+.mention {
+  font-weight: 700;
+  color: #0b6bcb;
+  background: rgba(11, 107, 203, 0.1);
+  border-radius: 4px;
+  padding: 0 3px;
+}
+/* Clickable document reference — mention-styled (bold + coloured), teal to read as a
+   doc/link rather than a person, with a pointer + hover underline. */
+.docLink {
+  font-weight: 700;
+  color: #0e8a7d;
+  background: rgba(14, 138, 125, 0.1);
+  border-radius: 4px;
+  padding: 0 4px;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.docLink:hover {
+  text-decoration: underline;
+  background: rgba(14, 138, 125, 0.18);
+}
 .msgText code {
   font-family: var(--mono);
   font-size: 12px;
@@ -673,28 +863,101 @@
   padding: 18px;
 }
 .modalTitle {
-  font-size: 15px;
+  font-size: 15.5px;
   font-weight: 700;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
+}
+.modalLabel {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #a0a6bc;
+  margin: 2px 0 5px;
+}
+.labelHint {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+  color: #b6bccd;
 }
 .modalInput {
   width: 100%;
-  height: 36px;
+  height: 38px;
   border: 1px solid var(--line);
-  border-radius: 9px;
+  border-radius: 10px;
   padding: 0 12px;
   font-size: 13px;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   background: #fff;
   outline: none;
+  transition: border-color 0.12s, box-shadow 0.12s;
 }
 .modalInput:focus {
   border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
 }
-.memberHead {
+.memberBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 4px 0 8px;
+}
+.selectAll {
   font-size: 11.5px;
-  color: var(--muted);
-  margin: 6px 0 6px;
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--primary-soft);
+  border: none;
+  border-radius: 7px;
+  padding: 4px 10px;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.selectAll:hover {
+  opacity: 0.85;
+}
+.selChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 9px;
+  max-height: 88px;
+  overflow-y: auto;
+}
+.selChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #3a4162;
+  background: var(--primary-soft);
+  border-radius: 20px;
+  padding: 3px 5px 3px 9px;
+}
+.selChipEmoji {
+  font-size: 12px;
+}
+.selChipX {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(78, 90, 232, 0.16);
+  color: var(--primary);
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+.selChipX:hover {
+  background: var(--primary);
+  color: #fff;
 }
 .memberList {
   flex: 1;
@@ -703,6 +966,29 @@
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 4px;
+}
+.divGroup {
+  position: sticky;
+  top: 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #a0a6bc;
+  background: var(--card);
+  padding: 6px 8px 4px;
+}
+.memberEmpty {
+  padding: 22px 12px;
+  text-align: center;
+  color: #b6bccd;
+  font-size: 12px;
+}
+.memberFootHint {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.45;
+  margin-top: 8px;
 }
 .memberItem {
   display: flex;
@@ -863,3 +1149,121 @@
 }
 
 
+
+/* ---- composer attachments (images + tagged docs) ---- */
+.composerAttach {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 9px;
+  font-size: 15px;
+  cursor: pointer;
+  align-self: flex-end;
+}
+.composerAttach:hover:not(:disabled) { border-color: var(--primary); background: var(--primary-soft); }
+.composerAttach:disabled { opacity: 0.5; cursor: default; }
+.attachBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 2px 4px;
+}
+.attachThumb {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+.attachThumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.attachDoc {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: #3a4162;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 5px 8px;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.attachX {
+  border: none;
+  background: rgba(20, 24, 40, 0.55);
+  color: #fff;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  font-size: 9px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+.attachThumb .attachX { position: absolute; top: 2px; right: 2px; }
+.attachDoc .attachX { background: none; color: var(--muted); width: auto; height: auto; }
+.attachDoc .attachX:hover { color: #d93463; }
+
+/* ---- attachments rendered in a message ---- */
+.msgAttachments { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.msgImage {
+  max-width: 260px;
+  max-height: 260px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  display: block;
+  cursor: zoom-in;
+}
+.msgDocs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+
+/* ---- doc picker modal ---- */
+.docPickList {
+  margin-top: 10px;
+  max-height: 46vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.docPickRow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+  color: #3a4162;
+}
+.docPickRow:hover { border-color: var(--primary); }
+.docPickOn { border-color: var(--primary); background: var(--primary-soft); }
+.docPickCheck {
+  flex: 0 0 auto;
+  width: 18px;
+  text-align: center;
+  font-weight: 700;
+  color: var(--primary);
+}
+.docPickName { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.docPickFolder { font-size: 11px; color: var(--muted); }
+.docPickFoot { display: flex; justify-content: flex-end; margin-top: 12px; }
+.docPickDone {
+  height: 38px;
+  padding: 0 20px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--primary);
+  border: none;
+  cursor: pointer;
+}

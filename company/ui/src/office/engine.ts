@@ -75,6 +75,8 @@ interface Ent {
   working: boolean
   reviewing: boolean
   reading: boolean
+  chatting: boolean // composing a chat reply right now (transient, from 'activity' events)
+  chatUntil: number // safety deadline so a lost 'idle' can't leave it typing forever
   anim: number
   bubble?: Bubble
   queue: Step[]
@@ -84,6 +86,7 @@ interface Ent {
 export interface OfficeEvent {
   type: 'hello' | 'message' | 'taskStatus' | 'comment' | 'tool' | string
   tasks?: { id: string; assignee?: string | null; reporter?: string | null; status: string }[]
+  composing?: string[] // hello: agent slugs mid chat-reply → restore the ⌨️ pose on reconnect
   from?: string | null
   to?: string | null
   kind?: string
@@ -94,6 +97,7 @@ export interface OfficeEvent {
   mentions?: string[]
   phase?: string
   tool?: string
+  state?: string // 'activity' events: 'typing' while composing a chat reply | 'idle'
 }
 
 /** An HTML overlay item positioned over an agent (world coords; scale by zoom). */
@@ -143,6 +147,7 @@ const reviewerOf = (reporter?: string | null): string =>
     Keep in sync with KIND_BUBBLE, STATUS_BUBBLE, and the badge/comment icons. */
 export const OFFICE_LEGEND: { e: string; t: string }[] = [
   { e: '⌨️', t: 'đang làm task' },
+  { e: '✍️', t: 'đang soạn trả lời (chat)' },
   { e: '⏳', t: 'đang đợi agent khác' },
   { e: '💬', t: 'nhắn / trao đổi' },
   { e: '📦', t: 'bàn giao việc' },
@@ -192,6 +197,8 @@ export class OfficeWorld {
         working: false,
         reviewing: false,
         reading: false,
+        chatting: false,
+        chatUntil: 0,
         anim: Math.random() * 2, // desync animations
         queue: [],
       })
@@ -199,17 +206,21 @@ export class OfficeWorld {
   }
 
   /** Apply the hello snapshot AUTHORITATIVELY: an agent is "working" iff it holds
-      an in_progress task right now. This also runs on WS reconnect, so a stale
-      ⌨️ (task finished while we were away) is cleared, not left stuck on. */
-  setInitial(tasks: OfficeEvent['tasks']): void {
+      an in_progress task right now, and "chatting" iff it's mid chat-reply (from the
+      server's composing set). This also runs on WS reconnect, so a stale ⌨️ (task/reply
+      finished while we were away) is cleared, and an ongoing one is restored. */
+  setInitial(tasks: OfficeEvent['tasks'], composing: string[] = []): void {
     if (!tasks) return
     const working = new Set(
       tasks.filter((t) => t.status === 'in_progress' && t.assignee).map((t) => t.assignee as string),
     )
     const reviewing = new Set(tasks.filter((t) => t.status === 'in_qa').map((t) => reviewerOf(t.reporter)))
+    const chatting = new Set(composing)
     for (const e of this.ents.values()) {
       e.working = working.has(e.slug)
       e.reviewing = reviewing.has(e.slug)
+      e.chatting = chatting.has(e.slug)
+      if (e.chatting) e.chatUntil = this.t + 30 // same safety window as a live 'activity' event
     }
   }
 
@@ -217,9 +228,21 @@ export class OfficeWorld {
     e.queue.push({ kind: 'say', text, color, t })
   }
 
+  /** `a` walks over to `b`'s desk, WAITS for b to be free (one task at a time), shows a
+      bubble as the handoff happens, then walks home. Used for BOTH a chat message A→B
+      and a task handoff (submit for review / deliver a verdict). */
+  private walkHandoff(a: Ent, b: Ent, bubble: string, color: string): void {
+    a.queue.push({ kind: 'move', x: b.home.x - 20, y: b.home.y + 4 })
+    a.queue.push({ kind: 'face', dir: RIGHT })
+    a.queue.push({ kind: 'waitFor', slug: b.slug, timeout: 14 })
+    this.say(a, bubble, color, 2.6)
+    a.queue.push({ kind: 'move', x: a.home.x, y: a.home.y })
+    a.queue.push({ kind: 'face', dir: DOWN })
+  }
+
   onEvent(ev: OfficeEvent): void {
     if (ev.type === 'hello') {
-      this.setInitial(ev.tasks)
+      this.setInitial(ev.tasks, ev.composing ?? [])
       return
     }
     if (ev.type === 'message' && ev.from) {
@@ -231,14 +254,7 @@ export class OfficeWorld {
         this.say(a, bubble, a.color, 2.4) // to owner / self: emote in place
         return
       }
-      // Walk to B, WAIT for B to finish its current task (an agent does one task
-      // at a time), THEN hand off, then return home.
-      a.queue.push({ kind: 'move', x: b.home.x - 20, y: b.home.y + 4 })
-      a.queue.push({ kind: 'face', dir: RIGHT })
-      a.queue.push({ kind: 'waitFor', slug: b.slug, timeout: 14 })
-      this.say(a, bubble, a.color, 2.6) // the handoff happens once B is free
-      a.queue.push({ kind: 'move', x: a.home.x, y: a.home.y })
-      a.queue.push({ kind: 'face', dir: DOWN })
+      this.walkHandoff(a, b, bubble, a.color) // walk to B, hand off, return home
       return
     }
     if (ev.type === 'taskStatus' && ev.assignee) {
@@ -257,7 +273,17 @@ export class OfficeWorld {
           reviewer.reviewing = false // reconnect hello re-derives if several tasks overlap
       }
       const b = STATUS_BUBBLE[ev.to]
-      if (b) this.say(e, b.emoji, b.color, 1.8)
+      // A task handoff is a real BÀN GIAO between two people → make them WALK, not just
+      // emote in place: in_qa = the assignee carries the deliverable TO the reviewer
+      // (submit for review); accepted/rejected = the reviewer walks TO the assignee to
+      // deliver the verdict. Other transitions (escalate/defer/cancel) stay in-place.
+      if (ev.to === 'in_qa' && reviewer && reviewer !== e) {
+        this.walkHandoff(e, reviewer, b?.emoji ?? '🔍', b?.color ?? '#F5A93F')
+      } else if ((ev.to === 'accepted' || ev.to === 'rejected') && reviewer && reviewer !== e) {
+        this.walkHandoff(reviewer, e, b?.emoji ?? '✅', b?.color ?? '#21C286')
+      } else if (b) {
+        this.say(e, b.emoji, b.color, 1.8)
+      }
       return
     }
     if (ev.type === 'comment' && ev.agent) {
@@ -282,6 +308,20 @@ export class OfficeWorld {
       }
       return
     }
+    // Live chat-reply signal: the agent is composing an answer right now → show the
+    // ⌨️ typing pose at its desk until the backend says 'idle' (or the safety timeout).
+    if (ev.type === 'activity' && ev.agent) {
+      const e = this.ents.get(ev.agent)
+      if (!e) return
+      if (ev.state === 'typing') {
+        e.chatting = true
+        e.chatUntil = this.t + 30 // clears itself if 'idle' is ever lost
+        this.say(e, '💬', e.color, 1.2)
+      } else {
+        e.chatting = false
+      }
+      return
+    }
   }
 
   update(dt: number): void {
@@ -289,6 +329,7 @@ export class OfficeWorld {
     for (const e of this.ents.values()) {
       e.anim += dt
       if (e.bubble && e.bubble.until < this.t) e.bubble = undefined
+      if (e.chatting && e.chatUntil < this.t) e.chatting = false // safety: lost 'idle'
 
       const step = e.queue[0]
       if (!step) continue
@@ -347,7 +388,7 @@ export class OfficeWorld {
   private stateOf(e: Ent): State {
     if (e.queue[0]?.kind === 'move') return 'walking'
     if (e.reviewing) return 'reading' // review = reading pose at the desk
-    if (e.working) return e.reading ? 'reading' : 'typing'
+    if (e.working || e.chatting) return e.reading ? 'reading' : 'typing'
     return 'idle'
   }
 
@@ -393,7 +434,7 @@ export class OfficeWorld {
       ctx.fillStyle = room.color
       ctx.fillRect(room.x, room.y, room.w, NAMEPLATE)
       ctx.fillStyle = '#fff'
-      ctx.font = '9px "Poppins", system-ui, sans-serif'
+      ctx.font = '9px "Be Vietnam Pro", system-ui, sans-serif'
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       // Centre the label, clipped to leave the top-right corner free for the
@@ -441,7 +482,15 @@ export class OfficeWorld {
   overlays(): OfficeOverlay[] {
     const out: OfficeOverlay[] = []
     for (const e of this.ents.values()) {
-      const badge = this.isWaiting(e) ? '⏳' : e.reviewing ? '🔍' : e.working ? '⌨️' : null
+      const badge = this.isWaiting(e)
+        ? '⏳'
+        : e.reviewing
+          ? '🔍'
+          : e.working
+            ? '⌨️'
+            : e.chatting
+              ? '✍️'
+              : null
       const bubble = e.bubble ? { text: e.bubble.text, color: e.bubble.color } : null
       if (!badge && !bubble) continue
       out.push({ slug: e.slug, x: Math.round(e.pos.x), y: Math.round(e.pos.y), badge, bubble })
@@ -468,7 +517,7 @@ export class OfficeWorld {
   private drawLabel(ctx: CanvasRenderingContext2D, e: Ent): void {
     const cx = Math.round(e.pos.x) + CHAR_W / 2
     const ty = Math.round(e.pos.y) - 6
-    ctx.font = '6px "Poppins", system-ui, sans-serif'
+    ctx.font = '6px "Be Vietnam Pro", system-ui, sans-serif'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     const tw = Math.ceil(ctx.measureText(e.role).width)

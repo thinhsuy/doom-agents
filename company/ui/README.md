@@ -192,5 +192,7 @@ nhưng không ghi gì cả thì tệ hơn là không có nút.
 
 ## Phụ thuộc ngoài
 
-Font Poppins nạp từ Google Fonts trong `index.html`. Mất mạng thì rơi về font hệ thống —
-bố cục không vỡ. Muốn bỏ hẳn phụ thuộc: tải Poppins về `public/` và đổi sang `@font-face`.
+Font **Be Vietnam Pro** (sans) + **JetBrains Mono** (mono) nạp từ Google Fonts trong
+`index.html` — cả hai có đầy đủ dấu tiếng Việt (Poppins cũ thiếu, nên dấu chồng ậ/ọ/ừ
+rơi về font hệ thống nhìn vỡ). Mất mạng thì rơi về font hệ thống (`-apple-system` hỗ trợ
+tiếng Việt) — bố cục không vỡ. Muốn bỏ hẳn phụ thuộc: tải font về `public/` + `@font-face`.

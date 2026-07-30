@@ -86,3 +86,4 @@ integrations/vibe/agents/
 integrations/vibe/prompts/
 integrations/zcode/agents/
 graphify-out/
+company/api/.session_secret

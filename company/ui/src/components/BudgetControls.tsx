@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { apiUrl } from '../lib/api'
-import { fmtUsd } from '../lib/format'
+import { useCurrency } from '../lib/currency'
 import s from './BudgetControls.module.css'
 
 interface Budget {
@@ -19,6 +19,7 @@ interface Budget {
 /** Emergency brakes: daily cost ceiling + warning threshold + one-click emergency
     stop + per-model LLM timeout. Live from the FastAPI backend. */
 export function BudgetControls() {
+  const { money, toUsd, toCurrentUnit, unit, unitSymbol } = useCurrency()
   const [b, setB] = useState<Budget | null>(null)
   const [online, setOnline] = useState<boolean | null>(null)
   const [ceilingIn, setCeilingIn] = useState('')
@@ -55,15 +56,23 @@ export function BudgetControls() {
     return () => clearInterval(t)
   }, [])
 
-  // Prefill edit boxes once budget arrives (don't clobber while typing).
+  // The budget is a USD cost control (vendors bill USD); the UI edits it in the current
+  // display unit (× live rate) and converts back to USD on save. Seed once when budget
+  // first arrives — don't clobber typing on the 5s poll.
   useEffect(() => {
-    if (b && ceilingIn === '') setCeilingIn(String(b.ceiling))
-    if (b && warnIn === '') setWarnIn(String(b.warn))
+    if (b && ceilingIn === '') setCeilingIn(String(Math.round(toCurrentUnit(b.ceiling))))
+    if (b && warnIn === '') setWarnIn(String(Math.round(toCurrentUnit(b.warn))))
   }, [b]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Re-seed the inputs when the display unit flips (else they show old-unit numbers).
+  useEffect(() => {
+    if (!b) return
+    setCeilingIn(String(Math.round(toCurrentUnit(b.ceiling))))
+    setWarnIn(String(Math.round(toCurrentUnit(b.warn))))
+  }, [unit]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function saveBudget() {
-    const ceilingUsd = Number(ceilingIn)
-    const warnUsd = Number(warnIn)
+    const ceilingUsd = toUsd(Number(ceilingIn))
+    const warnUsd = toUsd(Number(warnIn))
     if (!(ceilingUsd > 0)) return
     setBusy(true)
     try {
@@ -130,7 +139,7 @@ export function BudgetControls() {
         <div>
           <div className={s.label}>Phanh chi phí — hôm nay</div>
           <div className={s.big}>
-            {fmtUsd(b.spent)} <span className={s.of}>/ trần {fmtUsd(b.ceiling)}</span>
+            {money(b.spent, 'usd')} <span className={s.of}>/ trần {money(b.ceiling, 'usd')}</span>
           </div>
         </div>
         <div className={s.actions}>
@@ -152,9 +161,9 @@ export function BudgetControls() {
         {b.blocked ? (
           <span className={s.stopText}>⛔ ĐÃ DỪNG — {b.reason || 'agent không tiêu tốn LLM tới khi Tiếp tục'}</span>
         ) : b.spent >= b.warn ? (
-          <span className={s.warnText}>⚠️ Đã vượt ngưỡng cảnh báo {fmtUsd(b.warn)} — sẽ tự dừng khi chạm trần</span>
+          <span className={s.warnText}>⚠️ Đã vượt ngưỡng cảnh báo {money(b.warn, 'usd')} — sẽ tự dừng khi chạm trần</span>
         ) : (
-          <span className={s.okText}>Đang chạy bình thường · cảnh báo ở {fmtUsd(b.warn)}, tự dừng ở {fmtUsd(b.ceiling)}</span>
+          <span className={s.okText}>Đang chạy bình thường · cảnh báo ở {money(b.warn, 'usd')}, tự dừng ở {money(b.ceiling, 'usd')}</span>
         )}
       </div>
 
@@ -163,8 +172,8 @@ export function BudgetControls() {
         {periods.map((p) => (
           <div key={p.label} className={s.period}>
             <div className={s.pLabel}>{p.label}</div>
-            <div className={s.pSpent}>{fmtUsd(p.spent)}</div>
-            <div className={s.pCap}>/ ~{fmtUsd(p.cap)}{p.label !== 'Ngày' && ' ước tính'}</div>
+            <div className={s.pSpent}>{money(p.spent, 'usd')}</div>
+            <div className={s.pCap}>/ ~{money(p.cap, 'usd')}{p.label !== 'Ngày' && ' ước tính'}</div>
           </div>
         ))}
       </div>
@@ -181,11 +190,11 @@ export function BudgetControls() {
               <div className={s.groupLabel}>Trần chi phí (theo ngày)</div>
               <div className={s.settings}>
                 <label className={s.field}>
-                  Trần ($/ngày)
+                  Trần ({unitSymbol}/ngày)
                   <input className={s.num} value={ceilingIn} onChange={(e) => setCeilingIn(e.target.value)} inputMode="decimal" />
                 </label>
                 <label className={s.field}>
-                  Ngưỡng cảnh báo ($)
+                  Ngưỡng cảnh báo ({unitSymbol}/ngày)
                   <input className={s.num} value={warnIn} onChange={(e) => setWarnIn(e.target.value)} inputMode="decimal" />
                 </label>
                 <button className={s.save} onClick={saveBudget} disabled={busy || !(Number(ceilingIn) > 0)}>

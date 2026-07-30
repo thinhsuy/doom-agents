@@ -146,3 +146,123 @@
 .tfoot td:first-child {
   padding-left: 24px;
 }
+
+/* Estimated monthly infra total badge in the panel header */
+.infraTotal {
+  margin-left: auto;
+  font-size: 14px;
+  font-weight: 800;
+  color: #F5A93F;
+  font-family: var(--mono);
+}
+
+/* ---- clickable infra rows ---- */
+.rowClickable { cursor: pointer; }
+.rowClickable:hover { background: var(--primary-soft); }
+.chevron { color: var(--muted); font-weight: 700; }
+
+/* ---- infra drawer: config form ---- */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+.fieldLabel {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #a0a6bc;
+  font-family: var(--mono);
+}
+.fieldInput {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  background: #fff;
+  outline: none;
+}
+.fieldInput:focus { border-color: var(--primary); }
+
+.infraActions {
+  display: flex;
+  gap: 10px;
+  margin: 14px 0 4px;
+}
+.saveBtn {
+  flex: 0 0 auto;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #5e6584;
+  background: #fff;
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+.saveBtn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
+.deployBtn {
+  flex: 1;
+  height: 38px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--primary);
+  border: none;
+  cursor: pointer;
+}
+.deployBtn:hover:not(:disabled) { opacity: 0.9; }
+.saveBtn:disabled, .deployBtn:disabled { opacity: 0.5; cursor: default; }
+
+/* ---- generated terraform command box ---- */
+.cmdBox {
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.cmdHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #5e6584;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+.copyBtn {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--primary-soft);
+  border: none;
+  border-radius: 6px;
+  padding: 3px 9px;
+  cursor: pointer;
+}
+.cmdPre {
+  margin: 0;
+  padding: 12px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: #2b3152;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.cmdNote {
+  padding: 8px 12px 10px;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.5;
+  border-top: 1px dashed var(--line);
+}
